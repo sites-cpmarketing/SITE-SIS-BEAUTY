@@ -1,26 +1,77 @@
 @import "tailwindcss";
 
+@theme {
+  /* ===== Paleta SIS Beauty ===== */
+  --color-perola: #faf7f2; /* off-white / fundo principal */
+  --color-cream: #f3ebe2; /* creme intermediário p/ seções */
+  --color-rose: #b98778; /* rosé cobre — cor da marca */
+  --color-rose-dark: #9c6a5d; /* hover de botões */
+  --color-rose-light: #e7ccc3; /* rosé claro — cards/divisões */
+  --color-champagne: #c9a76a; /* dourado — selos/estrelas */
+  --color-champagne-dark: #b08f4f;
+  --color-cacau: #4a332d; /* texto sofisticado */
+  --color-cacau-soft: #6b5048;
+
+  /* Fontes (variáveis vêm do next/font no layout) */
+  --font-display: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
+
+  /* Sombra premium */
+  --shadow-soft: 0 10px 40px -12px rgba(74, 51, 45, 0.18);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-perola);
+  --foreground: var(--color-cacau);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  border-color: var(--color-rose-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-perola);
+  color: var(--color-cacau);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--color-cacau);
+  letter-spacing: -0.01em;
+}
+
+/* Marquee da barra de urgência */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 22s linear infinite;
+}
+
+/* Fade-up sutil ao carregar */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fadeUp 0.7s ease-out both;
+}
+
+/* Botão primário reutilizável */
+.btn-primary {
+  background: var(--color-rose);
+  color: #fff;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 24px -8px rgba(185, 135, 120, 0.6);
+}
+.btn-primary:hover {
+  background: var(--color-rose-dark);
+  transform: translateY(-1px);
 }
