@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  /* ===== Paleta SIS Beauty ===== */
-  --color-perola: #faf7f2; /* off-white / fundo principal */
-  --color-cream: #f3ebe2; /* creme intermediário p/ seções */
-  --color-rose: #b98778; /* rosé cobre — cor da marca */
-  --color-rose-dark: #9c6a5d; /* hover de botões */
-  --color-rose-light: #e7ccc3; /* rosé claro — cards/divisões */
-  --color-champagne: #c9a76a; /* dourado — selos/estrelas */
-  --color-champagne-dark: #b08f4f;
-  --color-cacau: #4a332d; /* texto sofisticado */
-  --color-cacau-soft: #6b5048;
+  /* ===== Paleta SIS Beauty — vibrante & premium ===== */
+  --color-perola: #fbf8f4; /* off-white quente / fundo principal */
+  --color-cream: #f5ece1; /* creme intermediário p/ seções */
+  --color-rose: #c16b56; /* rosé cobre vivo — cor da marca */
+  --color-rose-dark: #a44f3c; /* cobre profundo — hover de botões */
+  --color-rose-light: #f2d3c7; /* rosé claro — cards/divisões */
+  --color-champagne: #d6a64f; /* dourado luminoso — selos/estrelas */
+  --color-champagne-dark: #bd8a35;
+  --color-cacau: #43302a; /* texto sofisticado */
+  --color-cacau-soft: #6b4f46;
 
   /* Fontes (variáveis vêm do next/font no layout) */
   --font-display: var(--font-playfair), Georgia, serif;
@@ -34,7 +34,9 @@ html {
 }
 
 body {
-  background: var(--color-perola);
+  background:
+    radial-gradient(120% 70% at 50% -10%, #fdeee6 0%, transparent 55%),
+    var(--color-perola);
   color: var(--color-cacau);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -55,6 +57,51 @@ h1, h2, h3, h4 {
   animation: marquee 22s linear infinite;
 }
 
+/* ===== Destaque 3D dos potes ===== */
+@keyframes float3d {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(0.6deg);
+  }
+}
+@keyframes floatShadow {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.28;
+  }
+  50% {
+    transform: translateX(-50%) scaleX(0.78);
+    opacity: 0.16;
+  }
+}
+.pote-3d {
+  filter: saturate(1.18) contrast(1.07) brightness(1.02)
+    drop-shadow(0 22px 26px rgba(67, 48, 42, 0.34))
+    drop-shadow(0 8px 10px rgba(67, 48, 42, 0.24));
+  animation: float3d 5s ease-in-out infinite;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s ease;
+  will-change: transform;
+}
+.pote-3d:hover {
+  transform: translateY(-6px) scale(1.06) rotate(0deg);
+  filter: saturate(1.24) contrast(1.09) brightness(1.03)
+    drop-shadow(0 32px 38px rgba(67, 48, 42, 0.4))
+    drop-shadow(0 10px 12px rgba(67, 48, 42, 0.28));
+}
+.pote-sombra {
+  animation: floatShadow 5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pote-3d,
+  .pote-sombra {
+    animation: none;
+  }
+}
+
 /* Fade-up sutil ao carregar */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
@@ -64,14 +111,57 @@ h1, h2, h3, h4 {
   animation: fadeUp 0.7s ease-out both;
 }
 
-/* Botão primário reutilizável */
+/* ===== Botão primário premium (reutilizável) ===== */
 .btn-primary {
-  background: var(--color-rose);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(135deg, #d57a63 0%, var(--color-rose) 45%, var(--color-rose-dark) 100%);
   color: #fff;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-  box-shadow: 0 8px 24px -8px rgba(185, 135, 120, 0.6);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.25s ease, filter 0.2s ease;
+  box-shadow: 0 10px 26px -10px rgba(156, 106, 93, 0.7);
+  will-change: transform;
+}
+/* Brilho diagonal que cruza o botão no hover */
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -160%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-22deg);
+  transition: left 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
 }
 .btn-primary:hover {
-  background: var(--color-rose-dark);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 16px 34px -10px rgba(156, 106, 93, 0.85);
+  filter: saturate(1.05);
+}
+.btn-primary:hover::after {
+  left: 160%;
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 6px 16px -8px rgba(156, 106, 93, 0.7);
+}
+/* desativa o brilho quando o botão está desabilitado */
+.btn-primary:disabled::after {
+  display: none;
+}
+
+/* Acessibilidade: respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary,
+  .btn-primary::after {
+    transition: none;
+  }
 }

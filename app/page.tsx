@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Ofertas from "@/components/Ofertas";
+import CarrosselResultados from "@/components/CarrosselResultados";
 import { IMG } from "@/lib/produtos";
 import {
   IcoBroto,
@@ -34,7 +35,6 @@ export default function Home() {
         <Formula />
         <Resultados />
         <Ofertas />
-        <Depoimentos />
         <FAQ />
         <CTAFinal />
       </main>
@@ -44,13 +44,28 @@ export default function Home() {
   );
 }
 
-/* ----------------------- Barra de frete grátis ----------------------- */
+/* ----------------------- Barra de frete grátis (banner rolando) ----------------------- */
 function BarraFreteGratis() {
+  const item = (
+    <span className="mx-6 inline-flex items-center gap-2 text-xs font-semibold tracking-wide md:text-sm">
+      🚚 FRETE GRÁTIS para todo o Brasil
+    </span>
+  );
   return (
-    <div className="bg-rose text-white">
-      <p className="mx-auto max-w-6xl px-4 py-2 text-center text-xs font-semibold tracking-wide md:text-sm">
-        🚚 FRETE GRÁTIS para todo o Brasil • Pague em até 12x no cartão
-      </p>
+    <div className="overflow-hidden bg-rose py-2 text-white">
+      <div className="flex w-max animate-marquee whitespace-nowrap">
+        {/* Conteúdo duplicado para o loop ficar contínuo */}
+        <div className="flex shrink-0">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={`a-${i}`}>{item}</span>
+          ))}
+        </div>
+        <div className="flex shrink-0" aria-hidden="true">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <span key={`b-${i}`}>{item}</span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -84,7 +99,7 @@ function Header() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-20">
+      <div className="mx-auto grid max-w-6xl items-center gap-2 px-4 pb-0 pt-8 md:grid-cols-2 md:gap-10 md:py-20">
         <div className="fade-up">
           <span className="inline-block rounded-full bg-rose-light px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cacau">
             Fórmula avançada • Goma & Cápsula
@@ -101,7 +116,7 @@ function Hero() {
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <a
               href="#ofertas"
-              className="btn-primary rounded-full px-8 py-4 text-lg font-bold"
+              className="btn-primary inline-block rounded-full px-7 py-3.5 text-base font-bold sm:text-lg md:px-8 md:py-4"
             >
               Quero meus cabelos dos sonhos
             </a>
@@ -114,22 +129,17 @@ function Hero() {
         </div>
 
         <div className="relative fade-up">
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-[2rem] shadow-soft">
+          {/* Modelo recortada (sem fundo), alta qualidade — apenas a foto */}
+          <div className="relative mx-auto aspect-[570/904] w-full max-w-[290px] sm:max-w-[330px] md:max-w-[400px]">
             <Image
               src={IMG.heroCabelo}
               alt="Mulher com cabelos longos e saudáveis segurando o produto SIS Beauty"
               fill
               priority
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover object-top"
+              quality={95}
+              sizes="(max-width: 768px) 80vw, 40vw"
+              className="object-contain"
             />
-          </div>
-          {/* Mockups flutuando */}
-          <div className="absolute -bottom-3 left-0 h-20 w-20 drop-shadow-xl md:-bottom-4 md:-left-2 md:h-36 md:w-36">
-            <Image src={IMG.mockupGoma} alt="Goma SIS Beauty" fill className="object-contain" />
-          </div>
-          <div className="absolute right-0 top-3 h-16 w-16 drop-shadow-xl md:-right-2 md:top-6 md:h-32 md:w-32">
-            <Image src={IMG.mockupCapsula} alt="Cápsula SIS Beauty" fill className="object-contain" />
           </div>
         </div>
       </div>
@@ -143,6 +153,32 @@ function Mini({ icon, t }: { icon: string; t: string }) {
       <span>{icon}</span>
       <span>{t}</span>
     </span>
+  );
+}
+
+/* ----------------------- CTA reutilizável (botão estratégico) ----------------------- */
+function CtaInline({
+  texto = "Quero começar meu tratamento",
+  variante = "primary",
+  className = "mt-10",
+}: {
+  texto?: string;
+  variante?: "primary" | "outline";
+  className?: string;
+}) {
+  return (
+    <div className={`flex justify-center ${className}`}>
+      <a
+        href="#ofertas"
+        className={
+          variante === "primary"
+            ? "btn-primary rounded-full px-6 py-3.5 text-sm font-bold sm:text-base md:px-8 md:py-4 md:text-lg"
+            : "inline-block rounded-full border-2 border-rose px-6 py-3 text-sm font-semibold text-rose transition-colors hover:bg-rose hover:text-white sm:text-base md:px-7 md:py-3.5"
+        }
+      >
+        {texto}
+      </a>
+    </div>
   );
 }
 
@@ -246,8 +282,22 @@ function ComoFunciona() {
               key={p.tipo}
               className="flex flex-col items-center rounded-3xl border border-rose-light bg-perola p-8 shadow-soft"
             >
-              <div className="relative h-56 w-44">
-                <Image src={p.img} alt={`${p.nome} ${p.tipo}`} fill className="object-contain" />
+              <div className="relative flex h-64 w-full items-end justify-center">
+                {/* Halo de luz atrás do pote */}
+                <div className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-rose-light/70 via-champagne/20 to-transparent blur-2xl" />
+                {/* Sombra projetada no chão */}
+                <div className="pote-sombra pointer-events-none absolute bottom-3 left-1/2 h-4 w-32 -translate-x-1/2 rounded-[50%] bg-cacau blur-md" />
+                {/* Pote em destaque */}
+                <div className="relative h-56 w-44">
+                  <Image
+                    src={p.img}
+                    alt={`${p.nome} ${p.tipo}`}
+                    fill
+                    quality={95}
+                    sizes="(max-width: 768px) 50vw, 176px"
+                    className="pote-3d object-contain"
+                  />
+                </div>
               </div>
               <span className="mt-2 rounded-full bg-rose-light px-3 py-1 text-xs font-bold uppercase tracking-wide text-cacau">
                 {p.tipo}
@@ -264,6 +314,7 @@ function ComoFunciona() {
             </div>
           ))}
         </div>
+        <CtaInline texto="Escolher meu tratamento" className="mt-12" />
       </div>
     </section>
   );
@@ -299,6 +350,7 @@ function BeneficiosDetalhados() {
             </div>
           ))}
         </div>
+        <CtaInline texto="Quero esses resultados" variante="outline" className="mt-12" />
       </div>
     </section>
   );
@@ -314,7 +366,14 @@ function Formula() {
     <section className="py-14 px-4 md:py-20">
       <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
         <div className="relative mx-auto aspect-square w-full max-w-md">
-          <Image src={IMG.mockupCapsula} alt="Fórmula SIS Beauty" fill className="object-contain" />
+          <Image
+            src={IMG.mockupCapsula}
+            alt="Fórmula SIS Beauty"
+            fill
+            quality={95}
+            sizes="(max-width: 768px) 100vw, 448px"
+            className="object-contain"
+          />
         </div>
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
@@ -336,6 +395,12 @@ function Formula() {
               </span>
             ))}
           </div>
+          <a
+            href="#ofertas"
+            className="btn-primary mt-7 inline-block rounded-full px-8 py-4 text-base font-bold md:text-lg"
+          >
+            Quero essa fórmula no meu cabelo
+          </a>
           <p className="mt-6 text-xs text-cacau-soft">
             * Confira a composição completa no rótulo do produto. Suplemento
             alimentar não substitui uma alimentação equilibrada. Consumo por
@@ -347,29 +412,8 @@ function Formula() {
   );
 }
 
-/* ----------------------- Resultados (antes e depois) ----------------------- */
+/* ----------------------- Resultados (carrossel de feedbacks) ----------------------- */
 function Resultados() {
-  const antesDepois = [
-    {
-      img: IMG.resultadoEntrada,
-      w: 1540,
-      h: 1027,
-      legenda: "Falhas na entrada preenchidas em 3 meses e meio de uso.",
-    },
-    {
-      img: IMG.resultadoVolume,
-      w: 1540,
-      h: 1027,
-      legenda:
-        "Crescimento visível, fios mais fortes, saudáveis e muito mais volume em 4 meses e meio.",
-    },
-    {
-      img: IMG.resultadoCrescimento,
-      w: 1180,
-      h: 1020,
-      legenda: "Cerca de 4 cm de crescimento em menos de 2 meses.",
-    },
-  ];
   return (
     <section id="resultados" className="bg-cream py-14 px-4 md:py-20 scroll-mt-20">
       <div className="mx-auto max-w-6xl">
@@ -384,93 +428,13 @@ function Resultados() {
           </p>
         </div>
 
-        {/* Conversa real de cliente */}
-        <div className="mt-12 grid items-center gap-8 rounded-3xl bg-perola p-6 shadow-soft md:grid-cols-[auto,1fr] md:p-10">
-          <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-2xl shadow-soft">
-            <Image
-              src={IMG.resultadoBia}
-              alt="Conversa real de cliente relatando menos queda e mais volume em 49 dias"
-              width={824}
-              height={1740}
-              sizes="(max-width: 768px) 80vw, 260px"
-              className="h-auto w-full"
-            />
-          </div>
-          <div>
-            <div className="text-lg text-champagne">★★★★★</div>
-            <p className="mt-3 text-xl leading-relaxed text-cacau md:text-2xl">
-              &ldquo;49 dias usando e meu cabelo mudou bastante! Menos queda e
-              bem mais volume.&rdquo;
-            </p>
-            <p className="mt-4 text-sm font-semibold text-rose">
-              — Bia, cliente SIS Beauty · 49 dias de uso
-            </p>
-            <p className="mt-2 text-sm text-cacau-soft">
-              Resultado registrado pela própria cliente, comparando antes e
-              depois em pouco mais de um mês e meio.
-            </p>
-          </div>
-        </div>
+        <CarrosselResultados />
 
-        {/* Antes e depois */}
-        <div className="mt-10 grid gap-8 md:grid-cols-3">
-          {antesDepois.map((r) => (
-            <figure
-              key={r.img}
-              className="overflow-hidden rounded-3xl bg-perola shadow-soft"
-            >
-              <Image
-                src={r.img}
-                alt="Antes e depois do tratamento SIS Beauty"
-                width={r.w}
-                height={r.h}
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="h-auto w-full"
-              />
-              <figcaption className="px-5 py-4 text-sm text-cacau-soft">
-                {r.legenda}
-              </figcaption>
-            </figure>
-          ))}
-        </div>
+        <CtaInline texto="Quero resultados assim no meu cabelo" className="mt-10" />
 
         <p className="mt-8 text-center text-xs text-cacau-soft">
           Resultados reais com o uso contínuo da fórmula. Cada organismo reage
           de uma forma e os resultados podem variar de pessoa para pessoa.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-/* ----------------------- Depoimentos ----------------------- */
-function Depoimentos() {
-  // SUBSTITUA por depoimentos REAIS de clientes (com autorização de uso de imagem/texto).
-  const deps = [
-    { n: "Mariana S.", t: "Em poucas semanas senti meu cabelo mais forte e com menos queda no travesseiro. Apaixonada!" },
-    { n: "Patrícia L.", t: "As gomas são uma delícia e super práticas. Não esqueço de tomar e já vejo diferença no brilho." },
-    { n: "Carla M.", t: "Minhas unhas pararam de descascar e o cabelo cresceu mais rápido. Recomendo demais!" },
-  ];
-  return (
-    <section className="bg-cream py-14 px-4 md:py-20">
-      <div className="mx-auto max-w-6xl">
-        <div className="text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
-            Quem usa, ama
-          </p>
-          <h2 className="mt-3 text-3xl md:text-4xl">Histórias de transformação</h2>
-        </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {deps.map((d) => (
-            <div key={d.n} className="rounded-2xl bg-perola p-7 shadow-soft">
-              <div className="text-champagne">★★★★★</div>
-              <p className="mt-3 text-cacau">&ldquo;{d.t}&rdquo;</p>
-              <p className="mt-4 text-sm font-semibold text-rose">{d.n}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-6 text-center text-xs text-cacau-soft">
-          Depoimentos reais de clientes. Resultados podem variar de pessoa para pessoa.
         </p>
       </div>
     </section>
@@ -527,12 +491,6 @@ function CTAFinal() {
           Junte-se às mulheres que escolheram cuidar dos cabelos de verdade e
           transformaram a saúde dos seus fios.
         </p>
-        <a
-          href="#ofertas"
-          className="btn-primary mt-8 inline-block rounded-full px-10 py-5 text-xl font-bold"
-        >
-          Quero começar meu tratamento
-        </a>
       </div>
     </section>
   );

@@ -4,7 +4,9 @@ const APP_URL = process.env.APP_URL || "http://localhost:3000";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { ofertaId, descricao, precoProduto, frete, cep, total } = body;
+    const { ofertaId, descricao, precoProduto, total, endereco } = body;
+    const e = (endereco ?? {}) as Record<string, string>;
+    const soDigitos = (v?: string) => String(v ?? "").replace(/\D/g, "");
 
     if (!MP_TOKEN) {
       return Response.json(
@@ -16,8 +18,8 @@ export async function POST(req: Request) {
     const ref = `SIS-${ofertaId}-${Date.now()}`;
 
     type Item = { title: string; quantity: number; unit_price: number; currency_id: string };
-    // Frete grátis: o cliente paga apenas o produto. O custo real do frete e o
-    // serviço escolhido seguem no metadata para o webhook gerar a etiqueta.
+    // Frete grátis: o cliente paga apenas o produto (já com o desconto do cupom,
+    // se houver). unit_price = valor final a pagar.
     const items: Item[] = [
       {
         title: `SIS Beauty (${descricao}) · Frete grátis`,
@@ -30,24 +32,43 @@ export async function POST(req: Request) {
     const preference = {
       items,
       external_reference: ref,
+      // Pré-preenche os dados do comprador no checkout do Mercado Pago
+      payer: {
+        name: e.nome || undefined,
+        phone: e.telefone ? { number: soDigitos(e.telefone) } : undefined,
+        identification: e.cpf
+          ? { type: "CPF", number: soDigitos(e.cpf) }
+          : undefined,
+        address: {
+          zip_code: soDigitos(e.cep),
+          street_name: e.rua || undefined,
+          street_number: e.numero || undefined,
+        },
+      },
       back_urls: {
         success: `${APP_URL}/obrigado`,
         failure: `${APP_URL}/?pagamento=falhou`,
         pending: `${APP_URL}/obrigado?status=pendente`,
       },
-      auto_return: "approved",
+      // auto_return exige back_urls https (não funciona em http/localhost)
+      ...(APP_URL.startsWith("https://") ? { auto_return: "approved" } : {}),
       notification_url: `${APP_URL}/api/webhook/mercadopago`,
       statement_descriptor: "SISBEAUTY",
-      // Tudo que o webhook precisa para gerar a etiqueta depois:
+      // Endereço completo no metadata — o webhook usa p/ gerar a etiqueta
       metadata: {
         oferta_id: ofertaId,
         descricao,
-        cep,
-        frete_servico_id: frete?.servicoId,
-        frete_servico: frete?.servico,
-        frete_preco: frete?.preco,
-        frete_prazo: frete?.prazo,
         total,
+        end_nome: e.nome ?? "",
+        end_cpf: soDigitos(e.cpf),
+        end_telefone: soDigitos(e.telefone),
+        end_cep: soDigitos(e.cep),
+        end_rua: e.rua ?? "",
+        end_numero: e.numero ?? "",
+        end_complemento: e.complemento ?? "",
+        end_bairro: e.bairro ?? "",
+        end_cidade: e.cidade ?? "",
+        end_uf: e.uf ?? "",
       },
     };
 

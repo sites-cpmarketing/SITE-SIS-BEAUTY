@@ -16,7 +16,7 @@ export const IMG = {
   // Mockups dos produtos (PNG sem fundo -> WebP com transparência)
   mockupCapsula: "/fotos/mockup-capsula.webp",
   mockupGoma: "/fotos/mockup-goma.webp",
-  heroCabelo: "/fotos/hero-principal.webp",
+  heroCabelo: "/fotos/hero-modelo.webp",
   heroProduto: "/fotos/dsc06160.webp",
   embaixadora: "/fotos/marca-boutique.webp",
   embaixadoraApresenta: "/fotos/dsc06141.webp",
@@ -32,11 +32,11 @@ export const IMG = {
   modeloPote1: "/fotos/dsc06159.webp",
   modeloPote2: "/fotos/dsc06138.webp",
   lifestyleCorpo: "/fotos/dsc06158.webp",
-  // Prova social — antes e depois de clientes reais
-  resultadoBia: "/fotos/resultado-bia.webp",
-  resultadoEntrada: "/fotos/resultado-entrada.webp",
-  resultadoVolume: "/fotos/resultado-volume.webp",
-  resultadoCrescimento: "/fotos/resultado-crescimento.webp",
+  // Prova social — antes e depois de clientes reais (ordem do carrossel)
+  resultado1: "/fotos/resultado-1.webp",
+  resultado2: "/fotos/resultado-2.webp",
+  resultado3: "/fotos/resultado-3.webp",
+  resultado4: "/fotos/resultado-4.webp",
 } as const;
 
 /** Dados físicos de UMA unidade (pote). AJUSTE conforme seu produto real. */
@@ -140,3 +140,42 @@ export const getOferta = (id: string) => OFERTAS.find((o) => o.id === id);
 /** Formata número em BRL */
 export const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Endereço de entrega coletado no checkout (usado pelo Melhor Envio). */
+export type Endereco = {
+  nome: string;
+  cpf: string;
+  telefone: string;
+  cep: string;
+  rua: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+};
+
+export const ENDERECO_VAZIO: Endereco = {
+  nome: "",
+  cpf: "",
+  telefone: "",
+  cep: "",
+  rua: "",
+  numero: "",
+  complemento: "",
+  bairro: "",
+  cidade: "",
+  uf: "",
+};
+
+/** Verifica se os campos obrigatórios do endereço estão preenchidos. */
+export const enderecoValido = (e: Endereco): boolean =>
+  !!(
+    e.nome.trim() &&
+    e.cep.replace(/\D/g, "").length === 8 &&
+    e.rua.trim() &&
+    e.numero.trim() &&
+    e.bairro.trim() &&
+    e.cidade.trim() &&
+    e.uf.trim()
+  );

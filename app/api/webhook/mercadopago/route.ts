@@ -73,28 +73,50 @@ export async function POST(req: Request) {
   }
 }
 
+// Serviço de envio padrão do Melhor Envio (1 = PAC, 2 = SEDEX). Configurável.
+const SERVICO_PADRAO = Number(process.env.MELHOR_ENVIO_SERVICO) || 1;
+
+type Meta = Record<string, unknown>;
 type Pay = {
-  metadata?: Record<string, unknown>;
+  metadata?: Meta;
   external_reference?: string;
-  payer?: {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    identification?: { number?: string };
-    phone?: { number?: string };
-    address?: {
-      zip_code?: string;
-      street_name?: string;
-      street_number?: string;
-    };
-  };
+  order?: { id?: string | number };
+  payer?: { email?: string };
 };
+
+/**
+ * O metadata definido na preference nem sempre volta no objeto de pagamento.
+ * Se faltar, recupera a preference via merchant_order para ler o endereço.
+ */
+async function resolverMetadata(pay: Pay): Promise<Meta> {
+  const meta = pay.metadata ?? {};
+  if (meta.end_cep) return meta;
+  try {
+    const orderId = pay.order?.id;
+    if (!orderId) return meta;
+    const auth = { Authorization: `Bearer ${MP_TOKEN}` };
+    const mo = await fetch(
+      `https://api.mercadopago.com/merchant_orders/${orderId}`,
+      { headers: auth }
+    ).then((r) => r.json());
+    const prefId = mo?.preference_id;
+    if (!prefId) return meta;
+    const pref = await fetch(
+      `https://api.mercadopago.com/checkout/preferences/${prefId}`,
+      { headers: auth }
+    ).then((r) => r.json());
+    return (pref?.metadata as Meta) ?? meta;
+  } catch (e) {
+    console.error("[webhook] não recuperou metadata da preference:", e);
+    return meta;
+  }
+}
 
 /** Fluxo Melhor Envio: adiciona ao carrinho -> checkout -> gera etiqueta. */
 async function gerarEtiqueta(pay: Pay) {
-  const meta = pay.metadata ?? {};
-  const payer = pay.payer ?? {};
-  const cep = String(meta.cep || payer.address?.zip_code || "").replace(/\D/g, "");
+  const meta = await resolverMetadata(pay);
+  const s = (k: string) => String(meta[k] ?? "");
+  const cep = s("end_cep").replace(/\D/g, "");
 
   const headers = {
     Authorization: `Bearer ${ME_TOKEN}`,
@@ -103,26 +125,26 @@ async function gerarEtiqueta(pay: Pay) {
     "User-Agent": UA,
   };
 
-  // 1) Adiciona ao carrinho
+  // 1) Adiciona ao carrinho com o endereço coletado no checkout do site
   const cartPayload = {
-    service: Number(meta.frete_servico_id) || undefined,
+    service: SERVICO_PADRAO,
     from: REMETENTE,
     to: {
-      name:
-        `${payer.first_name ?? ""} ${payer.last_name ?? ""}`.trim() || "Cliente",
-      phone: payer.phone?.number || "",
-      email: payer.email || "",
-      document: payer.identification?.number || "", // CPF do destinatário
+      name: s("end_nome") || "Cliente",
+      phone: s("end_telefone"),
+      email: pay.payer?.email || "",
+      document: s("end_cpf"), // CPF do destinatário
       postal_code: cep,
-      address: payer.address?.street_name || "", // TODO: coletar no formulário
-      number: payer.address?.street_number || "",
-      district: "", // TODO: coletar no formulário de entrega
-      city: "", // TODO
-      state_abbr: "", // TODO
+      address: s("end_rua"),
+      number: s("end_numero"),
+      complement: s("end_complemento"),
+      district: s("end_bairro"),
+      city: s("end_cidade"),
+      state_abbr: s("end_uf"),
     },
     products: [
       {
-        name: `SIS Beauty (${meta.descricao ?? "Tratamento capilar"})`,
+        name: `SIS Beauty (${s("descricao") || "Tratamento capilar"})`,
         quantity: 1,
         unitary_value: Number(meta.total) || 97,
       },
@@ -149,12 +171,12 @@ async function gerarEtiqueta(pay: Pay) {
     return;
   }
 
-  // 2) Checkout (compra o frete) — descomente quando tiver saldo/dados completos
+  // 2) Checkout (compra o frete) — descomente quando tiver saldo na conta ME
   // await fetch(`${ME_BASE}/api/v2/me/shipment/checkout`, {
   //   method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
   // });
 
-  // 3) Gerar etiqueta
+  // 3) Gerar etiqueta — descomente após o checkout acima
   // await fetch(`${ME_BASE}/api/v2/me/shipment/generate`, {
   //   method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
   // });

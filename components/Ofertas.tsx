@@ -2,27 +2,24 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { OFERTAS, brl, IMG, type Oferta } from "@/lib/produtos";
-
-type FreteOpcao = {
-  id: number;
-  nome: string;
-  empresa: string;
-  preco: number;
-  prazo: number;
-  erro?: string;
-};
+import {
+  OFERTAS,
+  brl,
+  IMG,
+  ENDERECO_VAZIO,
+  enderecoValido,
+  type Oferta,
+  type Endereco,
+} from "@/lib/produtos";
 
 export default function Ofertas() {
   const [sel, setSel] = useState<Oferta>(OFERTAS[2]);
   const [aberto, setAberto] = useState(false); // painel abre ao escolher um plano
   const [qtdGoma, setQtdGoma] = useState(0);
   const [qtdCapsula, setQtdCapsula] = useState(0);
-  const [cep, setCep] = useState("");
-  const [fretes, setFretes] = useState<FreteOpcao[]>([]);
-  const [freteSel, setFreteSel] = useState<FreteOpcao | null>(null);
-  const [freteLoad, setFreteLoad] = useState(false);
-  const [freteErro, setFreteErro] = useState("");
+  const [end, setEnd] = useState<Endereco>(ENDERECO_VAZIO);
+  const [cepLoad, setCepLoad] = useState(false);
+  const [cepErro, setCepErro] = useState("");
   const [checkoutLoad, setCheckoutLoad] = useState(false);
   const [checkoutErro, setCheckoutErro] = useState("");
 
@@ -30,14 +27,42 @@ export default function Ofertas() {
   const escolhaFeita = soma === sel.unidades && sel.unidades > 0;
   const podeAdicionar = soma < sel.unidades;
 
+  const setCampo = (k: keyof Endereco, v: string) =>
+    setEnd((e) => ({ ...e, [k]: v }));
+
   function resetEscolhas() {
     setQtdGoma(0);
     setQtdCapsula(0);
-    setCep("");
-    setFretes([]);
-    setFreteSel(null);
-    setFreteErro("");
+    setEnd(ENDERECO_VAZIO);
+    setCepErro("");
     setCheckoutErro("");
+  }
+
+  // Busca o endereço pelo CEP (ViaCEP) e preenche rua/bairro/cidade/UF.
+  async function buscarCep(cepRaw: string) {
+    const cep = cepRaw.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+    setCepLoad(true);
+    setCepErro("");
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const d = await r.json();
+      if (d.erro) {
+        setCepErro("CEP não encontrado. Confira o número.");
+        return;
+      }
+      setEnd((e) => ({
+        ...e,
+        rua: d.logradouro || e.rua,
+        bairro: d.bairro || e.bairro,
+        cidade: d.localidade || e.cidade,
+        uf: d.uf || e.uf,
+      }));
+    } catch {
+      setCepErro("Não foi possível buscar o CEP agora. Preencha manualmente.");
+    } finally {
+      setCepLoad(false);
+    }
   }
 
   function selecionar(o: Oferta) {
@@ -64,43 +89,13 @@ export default function Ofertas() {
   const imgResumo =
     qtdCapsula > 0 && qtdGoma === 0 ? IMG.mockupCapsula : IMG.mockupGoma;
 
-  async function calcularFrete() {
-    const cepLimpo = cep.replace(/\D/g, "");
-    if (cepLimpo.length !== 8) {
-      setFreteErro("Digite um CEP válido (8 dígitos).");
-      return;
-    }
-    setFreteLoad(true);
-    setFreteErro("");
-    setFretes([]);
-    setFreteSel(null);
-    try {
-      const r = await fetch("/api/frete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cep: cepLimpo, unidades: sel.unidades }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data?.error || "Falha ao calcular frete.");
-      const ok = (data.opcoes as FreteOpcao[]).filter((o) => !o.erro);
-      if (ok.length === 0)
-        throw new Error("Nenhuma opção de frete para este CEP.");
-      setFretes(ok);
-      setFreteSel(ok[0]);
-    } catch (e) {
-      setFreteErro(e instanceof Error ? e.message : "Erro ao calcular o frete.");
-    } finally {
-      setFreteLoad(false);
-    }
-  }
-
-  // Frete grátis: a integração com o Melhor Envio continua ativa (calcula o
-  // prazo e define o serviço usado na etiqueta), mas o cliente NÃO paga frete.
+  // Frete é grátis: total = valor do produto. Endereço é obrigatório p/ envio.
   const total = sel.precoPor;
-  const podeFinalizar = escolhaFeita && !!freteSel && !checkoutLoad;
+  const enderecoOk = enderecoValido(end);
+  const podeFinalizar = escolhaFeita && enderecoOk && !checkoutLoad;
 
   async function finalizar() {
-    if (!freteSel || !escolhaFeita) return;
+    if (!escolhaFeita || !enderecoOk) return;
     setCheckoutLoad(true);
     setCheckoutErro("");
     try {
@@ -112,16 +107,10 @@ export default function Ofertas() {
           descricao: descricaoEscolha(),
           qtdGoma,
           qtdCapsula,
-          precoProduto: sel.precoPor,
-          frete: {
-            servico: freteSel.nome,
-            empresa: freteSel.empresa,
-            preco: freteSel.preco, // custo real p/ a etiqueta — o cliente não paga (frete grátis)
-            prazo: freteSel.prazo,
-            servicoId: freteSel.id,
-          },
-          cep: cep.replace(/\D/g, ""),
+          precoProduto: total,
           total,
+          // Endereço de entrega — usado pelo webhook p/ gerar a etiqueta
+          endereco: { ...end, cep: end.cep.replace(/\D/g, "") },
         }),
       });
       const data = await r.json();
@@ -289,70 +278,120 @@ export default function Ofertas() {
                   </div>
                 </Passo>
 
-                {/* PASSO 2 — frete (só após completar o kit) */}
+                {/* PASSO 2 — endereço de entrega (frete grátis) */}
                 {escolhaFeita && (
                   <div className="fade-up">
                     <Passo
                       n={2}
-                      titulo="Informe seu CEP e veja o prazo (frete grátis)"
-                      feito={!!freteSel}
+                      titulo="Endereço de entrega"
+                      feito={enderecoOk}
                     >
-                      <div className="flex gap-2">
-                        <input
-                          inputMode="numeric"
-                          placeholder="Seu CEP"
-                          value={cep}
-                          onChange={(e) => setCep(e.target.value)}
-                          maxLength={9}
-                          className="flex-1 rounded-xl border-2 border-rose-light bg-white px-4 py-3 outline-none focus:border-rose"
-                        />
-                        <button
-                          onClick={calcularFrete}
-                          disabled={freteLoad}
-                          className="rounded-xl bg-cacau px-5 py-3 font-semibold text-white disabled:opacity-60"
-                        >
-                          {freteLoad ? "..." : "Calcular"}
-                        </button>
+                      <div className="mb-3 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
+                        🚚 Frete grátis — você não paga nada pelo envio.
                       </div>
-                      {freteErro && (
-                        <p className="mt-2 text-sm text-red-600">{freteErro}</p>
-                      )}
-                      {fretes.length > 0 && (
-                        <div className="mt-4 space-y-2">
-                          {fretes.map((f) => (
-                            <label
-                              key={f.id}
-                              className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 cursor-pointer transition-colors ${
-                                freteSel?.id === f.id
-                                  ? "border-rose bg-rose-light"
-                                  : "border-rose-light"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="radio"
-                                  name="frete"
-                                  checked={freteSel?.id === f.id}
-                                  onChange={() => setFreteSel(f)}
-                                  className="accent-rose"
-                                />
-                                <div>
-                                  <p className="text-sm font-semibold">{f.nome}</p>
-                                  <p className="text-xs text-cacau-soft">
-                                    até {f.prazo} dias úteis
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="flex items-center gap-2 font-semibold text-emerald-600">
-                                <span className="text-xs text-cacau-soft line-through">
-                                  {brl(f.preco)}
-                                </span>
-                                Grátis
-                              </span>
-                            </label>
-                          ))}
+                      <div className="space-y-3">
+                        <Campo
+                          label="Nome completo"
+                          value={end.nome}
+                          onChange={(v) => setCampo("nome", v)}
+                          placeholder="Quem vai receber"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <Campo
+                            label="CPF"
+                            value={end.cpf}
+                            onChange={(v) => setCampo("cpf", v)}
+                            placeholder="Para a etiqueta"
+                            inputMode="numeric"
+                          />
+                          <Campo
+                            label="Telefone"
+                            value={end.telefone}
+                            onChange={(v) => setCampo("telefone", v)}
+                            placeholder="(00) 00000-0000"
+                            inputMode="numeric"
+                          />
                         </div>
-                      )}
+
+                        <div>
+                          <label className="mb-1 block text-xs font-semibold text-cacau-soft">
+                            CEP
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              inputMode="numeric"
+                              placeholder="00000-000"
+                              value={end.cep}
+                              maxLength={9}
+                              onChange={(e) => {
+                                setCampo("cep", e.target.value);
+                                if (cepErro) setCepErro("");
+                              }}
+                              onBlur={(e) => buscarCep(e.target.value)}
+                              className="w-40 rounded-xl border-2 border-rose-light bg-white px-4 py-3 outline-none focus:border-rose"
+                            />
+                            {cepLoad && (
+                              <span className="text-xs text-cacau-soft">
+                                buscando…
+                              </span>
+                            )}
+                            <a
+                              href="https://buscacepinter.correios.com.br/app/endereco/index.php"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-rose underline"
+                            >
+                              não sei meu CEP
+                            </a>
+                          </div>
+                          {cepErro && (
+                            <p className="mt-1 text-sm text-red-600">{cepErro}</p>
+                          )}
+                        </div>
+
+                        <Campo
+                          label="Rua / Logradouro"
+                          value={end.rua}
+                          onChange={(v) => setCampo("rua", v)}
+                          placeholder="Preenchido pelo CEP"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <Campo
+                            label="Número"
+                            value={end.numero}
+                            onChange={(v) => setCampo("numero", v)}
+                            placeholder="123"
+                            inputMode="numeric"
+                          />
+                          <Campo
+                            label="Complemento"
+                            value={end.complemento}
+                            onChange={(v) => setCampo("complemento", v)}
+                            placeholder="Apto, bloco (opcional)"
+                          />
+                        </div>
+                        <Campo
+                          label="Bairro"
+                          value={end.bairro}
+                          onChange={(v) => setCampo("bairro", v)}
+                          placeholder="Preenchido pelo CEP"
+                        />
+                        <div className="grid grid-cols-[1fr,90px] gap-3">
+                          <Campo
+                            label="Cidade"
+                            value={end.cidade}
+                            onChange={(v) => setCampo("cidade", v)}
+                            placeholder="Preenchido pelo CEP"
+                          />
+                          <Campo
+                            label="UF"
+                            value={end.uf}
+                            onChange={(v) => setCampo("uf", v.toUpperCase())}
+                            placeholder="UF"
+                            maxLength={2}
+                          />
+                        </div>
+                      </div>
                     </Passo>
                   </div>
                 )}
@@ -405,9 +444,9 @@ export default function Ofertas() {
                     ? "Redirecionando..."
                     : !escolhaFeita
                       ? "Monte seu kit para continuar"
-                      : !freteSel
-                        ? "Calcule o frete para continuar"
-                        : "🔒 Comprar agora"}
+                      : !enderecoOk
+                        ? "Preencha o endereço para continuar"
+                        : "🔒 Comprar agora · Frete grátis"}
                 </button>
                 {checkoutErro && (
                   <p className="mt-2 text-sm text-red-600">{checkoutErro}</p>
@@ -517,5 +556,39 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-cacau-soft">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
+  );
+}
+
+/* Campo de texto do formulário de endereço */
+function Campo({
+  label,
+  value,
+  onChange,
+  placeholder,
+  inputMode,
+  maxLength,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  inputMode?: "text" | "numeric";
+  maxLength?: number;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold text-cacau-soft">
+        {label}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        className="w-full rounded-xl border-2 border-rose-light bg-white px-4 py-3 outline-none focus:border-rose"
+      />
+    </label>
   );
 }
