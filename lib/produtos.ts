@@ -32,6 +32,11 @@ export const IMG = {
   modeloPote1: "/fotos/dsc06159.webp",
   modeloPote2: "/fotos/dsc06138.webp",
   lifestyleCorpo: "/fotos/dsc06158.webp",
+  // Prova social — antes e depois de clientes reais
+  resultadoBia: "/fotos/resultado-bia.webp",
+  resultadoEntrada: "/fotos/resultado-entrada.webp",
+  resultadoVolume: "/fotos/resultado-volume.webp",
+  resultadoCrescimento: "/fotos/resultado-crescimento.webp",
 } as const;
 
 /** Dados físicos de UMA unidade (pote). AJUSTE conforme seu produto real. */
@@ -90,7 +95,7 @@ export const OFERTAS: Oferta[] = [
       "Fórmula avançada de nutrição capilar",
       "Ideal para conhecer o tratamento",
     ],
-    freteGratis: false,
+    freteGratis: true,
   },
   {
     id: "duo",
@@ -107,26 +112,26 @@ export const OFERTAS: Oferta[] = [
       "Goma + cápsula agem em sinergia",
       "60 dias de tratamento contínuo",
     ],
-    freteGratis: false,
+    freteGratis: true,
   },
   {
     id: "completo",
-    nome: "Tratamento Completo 4 Meses",
+    nome: "Tratamento Completo 3 Meses",
     subtitulo: "O protocolo que entrega o resultado de verdade",
     badge: "🔥 MAIS VENDIDO",
     destaque: true,
-    unidades: 4,
+    unidades: 3,
     precoDe: 388,
-    precoPor: 297,
+    precoPor: 225,
     montavel: true,
-    composicoes: ["2 gomas + 2 cápsulas", "4 gomas", "4 cápsulas", "3 + 1"],
+    composicoes: ["2 gomas + 1 cápsula", "3 gomas", "3 cápsulas"],
     beneficios: [
-      "4 potes para montar do seu jeito",
-      "Tratamento completo de 120 dias",
-      "Melhor custo-benefício (R$ 74/mês)",
+      "3 potes para montar do seu jeito",
+      "Tratamento completo de 90 dias",
+      "Melhor custo-benefício (R$ 75/mês)",
       "Maior adesão = maior resultado",
     ],
-    freteGratis: false,
+    freteGratis: true,
   },
 ];
 

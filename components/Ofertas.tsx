@@ -94,8 +94,9 @@ export default function Ofertas() {
     }
   }
 
-  const fretePago = freteSel?.preco ?? 0;
-  const total = sel.precoPor + fretePago;
+  // Frete grátis: a integração com o Melhor Envio continua ativa (calcula o
+  // prazo e define o serviço usado na etiqueta), mas o cliente NÃO paga frete.
+  const total = sel.precoPor;
   const podeFinalizar = escolhaFeita && !!freteSel && !checkoutLoad;
 
   async function finalizar() {
@@ -115,7 +116,7 @@ export default function Ofertas() {
           frete: {
             servico: freteSel.nome,
             empresa: freteSel.empresa,
-            preco: fretePago,
+            preco: freteSel.preco, // custo real p/ a etiqueta — o cliente não paga (frete grátis)
             prazo: freteSel.prazo,
             servicoId: freteSel.id,
           },
@@ -197,6 +198,11 @@ export default function Ofertas() {
                   <p className="text-xs text-cacau-soft mt-1">
                     ou 12x de {brl(o.precoPor / 12)}
                   </p>
+                  {o.freteGratis && (
+                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                      🚚 Frete grátis para todo o Brasil
+                    </span>
+                  )}
                 </div>
 
                 <ul className="space-y-2 mb-6 flex-1">
@@ -286,7 +292,11 @@ export default function Ofertas() {
                 {/* PASSO 2 — frete (só após completar o kit) */}
                 {escolhaFeita && (
                   <div className="fade-up">
-                    <Passo n={2} titulo="Calcule o frete e o prazo" feito={!!freteSel}>
+                    <Passo
+                      n={2}
+                      titulo="Informe seu CEP e veja o prazo (frete grátis)"
+                      feito={!!freteSel}
+                    >
                       <div className="flex gap-2">
                         <input
                           inputMode="numeric"
@@ -333,8 +343,11 @@ export default function Ofertas() {
                                   </p>
                                 </div>
                               </div>
-                              <span className="font-semibold text-rose">
-                                {brl(f.preco)}
+                              <span className="flex items-center gap-2 font-semibold text-emerald-600">
+                                <span className="text-xs text-cacau-soft line-through">
+                                  {brl(f.preco)}
+                                </span>
+                                Grátis
                               </span>
                             </label>
                           ))}
@@ -367,10 +380,12 @@ export default function Ofertas() {
 
                 <div className="space-y-2 text-sm border-t border-rose-light pt-4">
                   <Row label="Produto" value={brl(sel.precoPor)} />
-                  <Row
-                    label="Frete"
-                    value={!freteSel ? "A calcular" : brl(fretePago)}
-                  />
+                  <div className="flex justify-between">
+                    <span className="text-cacau-soft">Frete</span>
+                    <span className="font-semibold text-emerald-600">
+                      Grátis 🚚
+                    </span>
+                  </div>
                   <div className="flex justify-between border-t border-rose-light pt-3 mt-1 text-lg font-bold">
                     <span>Total</span>
                     <span className="text-rose">{brl(total)}</span>

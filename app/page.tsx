@@ -23,6 +23,7 @@ const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
 export default function Home() {
   return (
     <>
+      <BarraFreteGratis />
       <Header />
       <main>
         <Hero />
@@ -31,6 +32,7 @@ export default function Home() {
         <ComoFunciona />
         <BeneficiosDetalhados />
         <Formula />
+        <Resultados />
         <Ofertas />
         <Depoimentos />
         <FAQ />
@@ -39,6 +41,17 @@ export default function Home() {
       <Footer />
       <WhatsappFloat />
     </>
+  );
+}
+
+/* ----------------------- Barra de frete grátis ----------------------- */
+function BarraFreteGratis() {
+  return (
+    <div className="bg-rose text-white">
+      <p className="mx-auto max-w-6xl px-4 py-2 text-center text-xs font-semibold tracking-wide md:text-sm">
+        🚚 FRETE GRÁTIS para todo o Brasil • Pague em até 12x no cartão
+      </p>
+    </div>
   );
 }
 
@@ -95,7 +108,7 @@ function Hero() {
           </div>
           <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-cacau-soft">
             <Mini icon="🌿" t="100% natural" />
-            <Mini icon="🇧🇷" t="Envio nacional" />
+            <Mini icon="🚚" t="Frete grátis Brasil" />
             <Mini icon="🔒" t="Compra segura" />
           </div>
         </div>
@@ -334,6 +347,102 @@ function Formula() {
   );
 }
 
+/* ----------------------- Resultados (antes e depois) ----------------------- */
+function Resultados() {
+  const antesDepois = [
+    {
+      img: IMG.resultadoEntrada,
+      w: 1540,
+      h: 1027,
+      legenda: "Falhas na entrada preenchidas em 3 meses e meio de uso.",
+    },
+    {
+      img: IMG.resultadoVolume,
+      w: 1540,
+      h: 1027,
+      legenda:
+        "Crescimento visível, fios mais fortes, saudáveis e muito mais volume em 4 meses e meio.",
+    },
+    {
+      img: IMG.resultadoCrescimento,
+      w: 1180,
+      h: 1020,
+      legenda: "Cerca de 4 cm de crescimento em menos de 2 meses.",
+    },
+  ];
+  return (
+    <section id="resultados" className="bg-cream py-14 px-4 md:py-20 scroll-mt-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
+            Antes e depois
+          </p>
+          <h2 className="mt-3 text-3xl md:text-4xl">Resultados reais de quem usa</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-cacau-soft">
+            Clientes que mantiveram o tratamento e viram a diferença nos
+            próprios fios — menos queda, mais volume e crescimento visível.
+          </p>
+        </div>
+
+        {/* Conversa real de cliente */}
+        <div className="mt-12 grid items-center gap-8 rounded-3xl bg-perola p-6 shadow-soft md:grid-cols-[auto,1fr] md:p-10">
+          <div className="mx-auto w-full max-w-[260px] overflow-hidden rounded-2xl shadow-soft">
+            <Image
+              src={IMG.resultadoBia}
+              alt="Conversa real de cliente relatando menos queda e mais volume em 49 dias"
+              width={824}
+              height={1740}
+              sizes="(max-width: 768px) 80vw, 260px"
+              className="h-auto w-full"
+            />
+          </div>
+          <div>
+            <div className="text-lg text-champagne">★★★★★</div>
+            <p className="mt-3 text-xl leading-relaxed text-cacau md:text-2xl">
+              &ldquo;49 dias usando e meu cabelo mudou bastante! Menos queda e
+              bem mais volume.&rdquo;
+            </p>
+            <p className="mt-4 text-sm font-semibold text-rose">
+              — Bia, cliente SIS Beauty · 49 dias de uso
+            </p>
+            <p className="mt-2 text-sm text-cacau-soft">
+              Resultado registrado pela própria cliente, comparando antes e
+              depois em pouco mais de um mês e meio.
+            </p>
+          </div>
+        </div>
+
+        {/* Antes e depois */}
+        <div className="mt-10 grid gap-8 md:grid-cols-3">
+          {antesDepois.map((r) => (
+            <figure
+              key={r.img}
+              className="overflow-hidden rounded-3xl bg-perola shadow-soft"
+            >
+              <Image
+                src={r.img}
+                alt="Antes e depois do tratamento SIS Beauty"
+                width={r.w}
+                height={r.h}
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="h-auto w-full"
+              />
+              <figcaption className="px-5 py-4 text-sm text-cacau-soft">
+                {r.legenda}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-xs text-cacau-soft">
+          Resultados reais com o uso contínuo da fórmula. Cada organismo reage
+          de uma forma e os resultados podem variar de pessoa para pessoa.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 /* ----------------------- Depoimentos ----------------------- */
 function Depoimentos() {
   // SUBSTITUA por depoimentos REAIS de clientes (com autorização de uso de imagem/texto).
@@ -375,7 +484,8 @@ function FAQ() {
     { q: "Devo escolher goma ou cápsula?", a: "Os dois têm o mesmo objetivo. A goma é mais prática e saborosa; a cápsula é mais concentrada. Muitas clientes usam os dois juntos para potencializar os resultados, e por isso o kit completo permite montar como você preferir." },
     { q: "Como devo tomar?", a: "Siga sempre a orientação do rótulo. De forma geral, o uso é diário e pode ser feito no horário que for mais fácil de manter na sua rotina." },
     { q: "Tem contraindicação?", a: "Por ser um suplemento alimentar, é seguro para a maioria das pessoas. Gestantes, lactantes, menores de 18 anos ou pessoas com condições de saúde específicas devem consultar um profissional antes de usar." },
-    { q: "Qual o prazo de entrega?", a: "Enviamos para todo o Brasil. O prazo e o valor do frete são calculados na hora da compra, de acordo com o seu CEP." },
+    { q: "O frete é grátis mesmo?", a: "Sim! O frete é grátis para todo o Brasil, sem valor mínimo de compra. Você paga apenas pelo tratamento — o envio é por nossa conta." },
+    { q: "Qual o prazo de entrega?", a: "Enviamos para todo o Brasil com frete grátis. Basta informar o seu CEP no checkout para ver o prazo estimado de entrega da sua região." },
   ];
   return (
     <section id="faq" className="py-14 px-4 md:py-20 scroll-mt-20">

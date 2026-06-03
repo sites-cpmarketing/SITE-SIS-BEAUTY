@@ -16,22 +16,16 @@ export async function POST(req: Request) {
     const ref = `SIS-${ofertaId}-${Date.now()}`;
 
     type Item = { title: string; quantity: number; unit_price: number; currency_id: string };
+    // Frete grátis: o cliente paga apenas o produto. O custo real do frete e o
+    // serviço escolhido seguem no metadata para o webhook gerar a etiqueta.
     const items: Item[] = [
       {
-        title: `SIS Beauty (${descricao})`,
+        title: `SIS Beauty (${descricao}) · Frete grátis`,
         quantity: 1,
         unit_price: Number(precoProduto),
         currency_id: "BRL",
       },
     ];
-    if (frete?.preco > 0) {
-      items.push({
-        title: `Frete: ${frete.servico}`,
-        quantity: 1,
-        unit_price: Number(frete.preco),
-        currency_id: "BRL",
-      });
-    }
 
     const preference = {
       items,
