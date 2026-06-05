@@ -2,14 +2,12 @@ import { getOferta } from "@/lib/produtos";
 import { buscarCupom, aplicarCupom } from "@/lib/cupons";
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
-const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { ofertaId, descricao, endereco, qtdGoma, qtdCapsula } = body;
     const e = (endereco ?? {}) as Record<string, string>;
-    // Total de potes do pedido — usado pelo webhook p/ dimensionar a caixa/peso
     const unidades = Math.max(1, (Number(qtdGoma) || 0) + (Number(qtdCapsula) || 0));
     const soDigitos = (v?: string) => String(v ?? "").replace(/\D/g, "");
 
@@ -20,7 +18,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── Preço calculado NO SERVIDOR (nunca confie no valor vindo do cliente) ──
+    // ── URL base derivada do próprio request — funciona em qualquer ambiente
+    // sem depender da variável APP_URL estar configurada no Vercel.
+    const host  = req.headers.get("host") || "";
+    const proto = host.includes("localhost") ? "http" : "https";
+    const BASE  = process.env.APP_URL || `${proto}://${host}`;
+
+    // ── Preço calculado NO SERVIDOR ──
     const oferta = getOferta(ofertaId);
     if (!oferta) {
       return Response.json({ error: "Oferta inválida." }, { status: 400 });
@@ -31,7 +35,6 @@ export async function POST(req: Request) {
     const ref = `SIS-${ofertaId}-${Date.now()}`;
 
     type Item = { title: string; quantity: number; unit_price: number; currency_id: string };
-    // Frete grátis: o cliente paga apenas o produto (já com o desconto do cupom).
     const items: Item[] = [
       {
         title: `SIS Beauty (${descricao}) · Frete grátis`,
@@ -44,11 +47,9 @@ export async function POST(req: Request) {
     const preference = {
       items,
       external_reference: ref,
-      // Pré-preenche os dados do comprador no checkout do Mercado Pago.
-      // O CPF (identification) é obrigatório para o PIX aparecer.
       payer: {
-        name:  e.nome    || undefined,
-        email: e.email   || undefined,
+        name:  e.nome  || undefined,
+        email: e.email || undefined,
         phone: e.telefone
           ? { area_code: soDigitos(e.telefone).slice(0, 2),
               number:     soDigitos(e.telefone).slice(2) }
@@ -57,44 +58,44 @@ export async function POST(req: Request) {
           ? { type: "CPF", number: soDigitos(e.cpf) }
           : undefined,
         address: {
-          zip_code:      soDigitos(e.cep)  || undefined,
-          street_name:   e.rua             || undefined,
-          street_number: e.numero          || undefined,
+          zip_code:      soDigitos(e.cep) || undefined,
+          street_name:   e.rua            || undefined,
+          street_number: e.numero         || undefined,
         },
       },
       back_urls: {
-        success: `${APP_URL}/obrigado`,
-        failure: `${APP_URL}/?pagamento=falhou`,
-        pending: `${APP_URL}/obrigado?status=pendente`,
+        success: `${BASE}/obrigado`,
+        failure: `${BASE}/?pagamento=falhou`,
+        pending: `${BASE}/obrigado?status=pendente`,
       },
-      // auto_return exige back_urls https (não funciona em http/localhost)
-      ...(APP_URL.startsWith("https://") ? { auto_return: "approved" } : {}),
-      notification_url: `${APP_URL}/api/webhook/mercadopago`,
+      // "all" redireciona tanto para approved (cartão) quanto pending (PIX/boleto)
+      // Sem isso o PIX fica preso na tela do MP após o pagamento
+      ...(BASE.startsWith("https://") ? { auto_return: "all" } : {}),
+      // URL de notificação derivada do request — nunca aponta para localhost em prod
+      notification_url: `${BASE}/api/webhook/mercadopago`,
       statement_descriptor: "SISBEAUTY",
-      // Métodos de pagamento — garante que PIX (bank_transfer) apareça
       payment_methods: {
-        excluded_payment_types:   [],   // nada excluído
-        excluded_payment_methods: [],   // nada excluído
-        installments: 12,              // máximo de parcelas no cartão
+        excluded_payment_types:   [],
+        excluded_payment_methods: [],
+        installments: 12,
         default_installments: 1,
       },
-      // Endereço completo no metadata — o webhook usa p/ gerar a etiqueta
       metadata: {
-        oferta_id: ofertaId,
+        oferta_id:       ofertaId,
         descricao,
         total,
         unidades,
-        cupom: cupom?.codigo ?? "",
-        end_nome: e.nome ?? "",
-        end_cpf: soDigitos(e.cpf),
-        end_telefone: soDigitos(e.telefone),
-        end_cep: soDigitos(e.cep),
-        end_rua: e.rua ?? "",
-        end_numero: e.numero ?? "",
+        cupom:           cupom?.codigo ?? "",
+        end_nome:        e.nome        ?? "",
+        end_cpf:         soDigitos(e.cpf),
+        end_telefone:    soDigitos(e.telefone),
+        end_cep:         soDigitos(e.cep),
+        end_rua:         e.rua         ?? "",
+        end_numero:      e.numero      ?? "",
         end_complemento: e.complemento ?? "",
-        end_bairro: e.bairro ?? "",
-        end_cidade: e.cidade ?? "",
-        end_uf: e.uf ?? "",
+        end_bairro:      e.bairro      ?? "",
+        end_cidade:      e.cidade      ?? "",
+        end_uf:          e.uf          ?? "",
       },
     };
 
@@ -115,6 +116,7 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log(`[checkout] preferência criada: ${data.id} | notification_url: ${BASE}/api/webhook/mercadopago`);
     return Response.json({ init_point: data.init_point, id: data.id, ref });
   } catch {
     return Response.json({ error: "Erro interno no checkout" }, { status: 500 });

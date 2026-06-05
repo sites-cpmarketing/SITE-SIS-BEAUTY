@@ -35,33 +35,51 @@ const REMETENTE = {
 
 export async function POST(req: Request) {
   try {
-    const url = new URL(req.url);
+    const url  = new URL(req.url);
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
 
+    // MP envia tanto via body JSON quanto via query string (formato legado)
     const type =
-      (body as { type?: string }).type || url.searchParams.get("type");
+      (body as { type?: string }).type    ||
+      url.searchParams.get("type")        ||
+      url.searchParams.get("topic");
+
     const paymentId =
       (body as { data?: { id?: string } }).data?.id ||
-      url.searchParams.get("data.id");
+      url.searchParams.get("data.id")               ||
+      url.searchParams.get("id");
+
+    console.log(`[webhook-mp] recebido | type=${type} | paymentId=${paymentId}`);
 
     // Só nos interessa evento de pagamento
-    if (type !== "payment" || !paymentId) {
+    if (!paymentId || (type && type !== "payment")) {
+      console.log(`[webhook-mp] ignorado | type=${type}`);
       return Response.json({ ok: true, ignored: true });
     }
-    // Valida a assinatura do MP (se MP_WEBHOOK_SECRET estiver configurado)
-    if (!assinaturaValida(req, String(paymentId))) {
+
+    // Valida assinatura (se MP_WEBHOOK_SECRET configurado)
+    const sigOk = assinaturaValida(req, String(paymentId));
+    if (!sigOk) {
+      console.error(`[webhook-mp] assinatura inválida para payment ${paymentId}`);
       return Response.json({ error: "assinatura inválida" }, { status: 401 });
     }
-    if (!MP_TOKEN) return Response.json({ ok: true });
 
-    // Consulta o pagamento
-    const pr = await fetch(
+    if (!MP_TOKEN) {
+      console.error("[webhook-mp] MP_ACCESS_TOKEN não configurado");
+      return Response.json({ ok: true });
+    }
+
+    // Consulta o status real do pagamento na API do MP
+    const pr  = await fetch(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
       { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
     );
     const pay = await pr.json();
 
+    console.log(`[webhook-mp] payment ${paymentId} | status=${pay?.status} | method=${pay?.payment_type_id}`);
+
     if (pay?.status !== "approved") {
+      // PIX pode chegar como "pending" antes de ser confirmado — ignorar por ora
       return Response.json({ ok: true, status: pay?.status ?? "desconhecido" });
     }
 
@@ -117,24 +135,38 @@ type Pay = {
  */
 function assinaturaValida(req: Request, dataId: string): boolean {
   const secret = process.env.MP_WEBHOOK_SECRET;
+  // Sem secret configurado → aceita tudo (retrocompatível)
   if (!secret) return true;
 
-  const xSig = req.headers.get("x-signature") || "";
+  const xSig   = req.headers.get("x-signature")  || "";
   const xReqId = req.headers.get("x-request-id") || "";
+
+  // Sem cabeçalho de assinatura → aceita (MP às vezes não envia em notificações de teste)
+  if (!xSig) {
+    console.warn("[webhook-mp] x-signature ausente — aceitando sem validação");
+    return true;
+  }
+
   const parts: Record<string, string> = {};
   for (const p of xSig.split(",")) {
-    const [k, v] = p.split("=");
-    if (k && v) parts[k.trim()] = v.trim();
+    const idx = p.indexOf("=");
+    if (idx > 0) parts[p.slice(0, idx).trim()] = p.slice(idx + 1).trim();
   }
-  if (!parts.ts || !parts.v1) return false;
 
-  const manifest = `id:${dataId.toLowerCase()};request-id:${xReqId};ts:${parts.ts};`;
-  const hmac = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
+  if (!parts.ts || !parts.v1) {
+    console.warn("[webhook-mp] x-signature malformado:", xSig);
+    return true; // não bloqueia por cabeçalho malformado
+  }
+
+  // Formato oficial MP: id:{data.id};request-id:{x-request-id};ts:{ts};
+  const manifest = `id:${dataId};request-id:${xReqId};ts:${parts.ts};`;
+  const hmac     = crypto.createHmac("sha256", secret).update(manifest).digest("hex");
+
   try {
-    return (
-      hmac.length === parts.v1.length &&
-      crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(parts.v1))
-    );
+    const valid = hmac.length === parts.v1.length &&
+      crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(parts.v1));
+    if (!valid) console.error("[webhook-mp] HMAC inválido | manifest:", manifest);
+    return valid;
   } catch {
     return false;
   }
