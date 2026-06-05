@@ -16,7 +16,10 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
+const SITE_URL = process.env.APP_URL || "https://sisbeauty.com.br";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "SIS Beauty | Cabelos Mais Fortes, Longos e Saudáveis",
   description:
     "Tratamento capilar SIS Beauty: gomas e cápsulas com fórmula avançada para acelerar o crescimento, fortalecer e dar mais brilho aos seus cabelos.",
@@ -34,6 +37,23 @@ export const metadata: Metadata = {
       "Fórmula avançada em goma e cápsula para acelerar o crescimento e fortalecer seus cabelos.",
     type: "website",
     locale: "pt_BR",
+    url: SITE_URL,
+    siteName: "SIS Beauty",
+    images: [
+      {
+        url: "/og-sisbeauty.jpg",
+        width: 1200,
+        height: 630,
+        alt: "SIS Beauty — tratamento capilar em goma e cápsula",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SIS Beauty | Cabelos Mais Fortes, Longos e Saudáveis",
+    description:
+      "Fórmula avançada em goma e cápsula para acelerar o crescimento e fortalecer seus cabelos.",
+    images: ["/og-sisbeauty.jpg"],
   },
   robots: { index: true, follow: true },
 };
