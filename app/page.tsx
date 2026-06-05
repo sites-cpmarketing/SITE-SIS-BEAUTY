@@ -5,6 +5,7 @@ import CarrosselResultados from "@/components/CarrosselResultados";
 import { IMG } from "@/lib/produtos";
 import { SITE, waLink } from "@/lib/site";
 import JsonLd from "@/components/JsonLd";
+import StickyComprar from "@/components/StickyComprar";
 import {
   IcoBroto,
   IcoEscudo,
@@ -17,12 +18,18 @@ import {
 const INSTAGRAM = SITE.contato.instagram;
 const EMAIL = SITE.contato.email;
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ pagamento?: string }>;
+}) {
+  const { pagamento } = await searchParams;
   return (
     <>
       <JsonLd />
       <BarraFreteGratis />
       <Header />
+      {pagamento === "falhou" && <BannerPagamentoFalhou />}
       <main>
         <Hero />
         <FaixaBeneficios />
@@ -37,7 +44,25 @@ export default function Home() {
       </main>
       <Footer />
       <WhatsappFloat />
+      <StickyComprar />
     </>
+  );
+}
+
+/* ----------------------- Banner: pagamento recusado ----------------------- */
+function BannerPagamentoFalhou() {
+  return (
+    <div className="bg-red-50 px-4 py-3 text-center text-sm text-red-700">
+      Seu pagamento não foi concluído. Nenhuma cobrança foi feita —{" "}
+      <a href="#ofertas" className="font-semibold underline">
+        tente novamente
+      </a>{" "}
+      ou{" "}
+      <a href={waLink("Olá! Tive um problema no pagamento do site.")} className="font-semibold underline">
+        fale conosco
+      </a>
+      .
+    </div>
   );
 }
 
@@ -575,7 +600,7 @@ function WhatsappFloat() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco no WhatsApp"
-      className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_10px_30px_-6px_rgba(18,140,114,0.75)] ring-1 ring-white/40 transition-transform duration-200 hover:scale-110"
+      className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_10px_30px_-6px_rgba(18,140,114,0.75)] ring-1 ring-white/40 transition-transform duration-200 hover:scale-110 md:bottom-5 md:right-5"
       style={{ background: "linear-gradient(145deg, #25D366 0%, #0e8a72 100%)" }}
     >
       <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden="true">

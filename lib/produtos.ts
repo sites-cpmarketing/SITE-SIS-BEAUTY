@@ -9,6 +9,8 @@
  * ============================================================
  */
 
+import { cpfValido, telefoneValido } from "@/lib/validacao";
+
 export type TipoProduto = "goma" | "capsula";
 
 /** Imagens otimizadas (em /public/fotos). Mapa semântico -> arquivo. */
@@ -190,10 +192,14 @@ export const ENDERECO_VAZIO: Endereco = {
   uf: "",
 };
 
-/** Verifica se os campos obrigatórios do endereço estão preenchidos. */
+/** Verifica se os campos obrigatórios do endereço estão preenchidos e válidos.
+ *  CPF e telefone são obrigatórios — o Melhor Envio exige CPF válido para gerar
+ *  a etiqueta de envio. */
 export const enderecoValido = (e: Endereco): boolean =>
   !!(
     e.nome.trim() &&
+    cpfValido(e.cpf) &&
+    telefoneValido(e.telefone) &&
     e.cep.replace(/\D/g, "").length === 8 &&
     e.rua.trim() &&
     e.numero.trim() &&

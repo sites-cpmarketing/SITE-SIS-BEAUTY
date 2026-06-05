@@ -11,6 +11,13 @@ import {
   type Oferta,
   type Endereco,
 } from "@/lib/produtos";
+import { buscarCupom, aplicarCupom, type Cupom } from "@/lib/cupons";
+import {
+  mascaraCPF,
+  mascaraTelefone,
+  mascaraCEP,
+  cpfValido,
+} from "@/lib/validacao";
 
 export default function Ofertas() {
   const [sel, setSel] = useState<Oferta>(OFERTAS[2]);
@@ -22,6 +29,9 @@ export default function Ofertas() {
   const [cepErro, setCepErro] = useState("");
   const [checkoutLoad, setCheckoutLoad] = useState(false);
   const [checkoutErro, setCheckoutErro] = useState("");
+  const [cupomCodigo, setCupomCodigo] = useState("");
+  const [cupom, setCupom] = useState<Cupom | null>(null);
+  const [cupomErro, setCupomErro] = useState("");
 
   const soma = qtdGoma + qtdCapsula;
   const escolhaFeita = soma === sel.unidades && sel.unidades > 0;
@@ -36,6 +46,20 @@ export default function Ofertas() {
     setEnd(ENDERECO_VAZIO);
     setCepErro("");
     setCheckoutErro("");
+    setCupomCodigo("");
+    setCupom(null);
+    setCupomErro("");
+  }
+
+  function aplicarCupomCodigo() {
+    const c = buscarCupom(cupomCodigo);
+    if (!c) {
+      setCupom(null);
+      setCupomErro("Cupom inválido ou expirado.");
+      return;
+    }
+    setCupom(c);
+    setCupomErro("");
   }
 
   // Busca o endereço pelo CEP (ViaCEP) e preenche rua/bairro/cidade/UF.
@@ -89,8 +113,9 @@ export default function Ofertas() {
   const imgResumo =
     qtdCapsula > 0 && qtdGoma === 0 ? IMG.mockupCapsula : IMG.mockupGoma;
 
-  // Frete é grátis: total = valor do produto. Endereço é obrigatório p/ envio.
-  const total = sel.precoPor;
+  // Frete grátis: total = valor do produto com o desconto do cupom (se houver).
+  const total = aplicarCupom(sel.precoPor, cupom);
+  const cpfInvalido = end.cpf.length > 0 && !cpfValido(end.cpf);
   const enderecoOk = enderecoValido(end);
   const podeFinalizar = escolhaFeita && enderecoOk && !checkoutLoad;
 
@@ -107,8 +132,7 @@ export default function Ofertas() {
           descricao: descricaoEscolha(),
           qtdGoma,
           qtdCapsula,
-          precoProduto: total,
-          total,
+          cupom: cupom?.codigo ?? "",
           // Endereço de entrega — usado pelo webhook p/ gerar a etiqueta
           endereco: { ...end, cep: end.cep.replace(/\D/g, "") },
         }),
@@ -140,6 +164,9 @@ export default function Ofertas() {
             <strong>cápsula</strong>. Monte o seu kit do jeito que preferir.
             Quanto maior o tratamento, melhor o resultado.
           </p>
+          <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-rose-light px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-cacau">
+            🔥 Promoção de lançamento · frete grátis para todo o Brasil
+          </span>
         </div>
 
         {/* Cards das ofertas */}
@@ -299,19 +326,28 @@ export default function Ofertas() {
                           placeholder="Quem vai receber"
                         />
                         <div className="grid grid-cols-2 gap-3">
-                          <Campo
-                            label="CPF"
-                            value={end.cpf}
-                            onChange={(v) => setCampo("cpf", v)}
-                            placeholder="Para a etiqueta"
-                            inputMode="numeric"
-                          />
+                          <div>
+                            <Campo
+                              label="CPF"
+                              value={end.cpf}
+                              onChange={(v) => setCampo("cpf", mascaraCPF(v))}
+                              placeholder="000.000.000-00"
+                              inputMode="numeric"
+                              maxLength={14}
+                            />
+                            {cpfInvalido && (
+                              <p className="mt-1 text-xs text-red-600">
+                                CPF inválido — confira os números.
+                              </p>
+                            )}
+                          </div>
                           <Campo
                             label="Telefone"
                             value={end.telefone}
-                            onChange={(v) => setCampo("telefone", v)}
+                            onChange={(v) => setCampo("telefone", mascaraTelefone(v))}
                             placeholder="(00) 00000-0000"
                             inputMode="numeric"
+                            maxLength={15}
                           />
                         </div>
 
@@ -326,7 +362,7 @@ export default function Ofertas() {
                               value={end.cep}
                               maxLength={9}
                               onChange={(e) => {
-                                setCampo("cep", e.target.value);
+                                setCampo("cep", mascaraCEP(e.target.value));
                                 if (cepErro) setCepErro("");
                               }}
                               onBlur={(e) => buscarCep(e.target.value)}
@@ -419,8 +455,44 @@ export default function Ofertas() {
                   </div>
                 </div>
 
+                {/* Cupom de desconto */}
+                <div className="mb-3">
+                  <div className="flex gap-2">
+                    <input
+                      value={cupomCodigo}
+                      onChange={(e) => {
+                        setCupomCodigo(e.target.value.toUpperCase());
+                        if (cupomErro) setCupomErro("");
+                      }}
+                      placeholder="Cupom de desconto"
+                      className="w-full flex-1 rounded-xl border-2 border-rose-light bg-white px-3 py-2.5 text-sm uppercase outline-none focus:border-rose"
+                    />
+                    <button
+                      type="button"
+                      onClick={aplicarCupomCodigo}
+                      className="shrink-0 rounded-xl border-2 border-rose px-4 text-sm font-semibold text-rose transition-colors hover:bg-rose hover:text-white"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                  {cupomErro && (
+                    <p className="mt-1 text-xs text-red-600">{cupomErro}</p>
+                  )}
+                  {cupom && (
+                    <p className="mt-1 text-xs font-semibold text-emerald-600">
+                      ✓ {cupom.descricao} aplicado
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-2 text-sm border-t border-rose-light pt-4">
                   <Row label="Produto" value={brl(sel.precoPor)} />
+                  {cupom && (
+                    <div className="flex justify-between text-emerald-700">
+                      <span>Desconto ({cupom.codigo})</span>
+                      <span>− {brl(sel.precoPor - total)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-cacau-soft">Frete</span>
                     <span className="font-semibold text-emerald-600">

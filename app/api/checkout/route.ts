@@ -1,10 +1,13 @@
+import { getOferta } from "@/lib/produtos";
+import { buscarCupom, aplicarCupom } from "@/lib/cupons";
+
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
 const APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { ofertaId, descricao, precoProduto, total, endereco, qtdGoma, qtdCapsula } = body;
+    const { ofertaId, descricao, endereco, qtdGoma, qtdCapsula } = body;
     const e = (endereco ?? {}) as Record<string, string>;
     // Total de potes do pedido — usado pelo webhook p/ dimensionar a caixa/peso
     const unidades = Math.max(1, (Number(qtdGoma) || 0) + (Number(qtdCapsula) || 0));
@@ -17,16 +20,23 @@ export async function POST(req: Request) {
       );
     }
 
+    // ── Preço calculado NO SERVIDOR (nunca confie no valor vindo do cliente) ──
+    const oferta = getOferta(ofertaId);
+    if (!oferta) {
+      return Response.json({ error: "Oferta inválida." }, { status: 400 });
+    }
+    const cupom = buscarCupom(body.cupom);
+    const total = aplicarCupom(oferta.precoPor, cupom);
+
     const ref = `SIS-${ofertaId}-${Date.now()}`;
 
     type Item = { title: string; quantity: number; unit_price: number; currency_id: string };
-    // Frete grátis: o cliente paga apenas o produto (já com o desconto do cupom,
-    // se houver). unit_price = valor final a pagar.
+    // Frete grátis: o cliente paga apenas o produto (já com o desconto do cupom).
     const items: Item[] = [
       {
         title: `SIS Beauty (${descricao}) · Frete grátis`,
         quantity: 1,
-        unit_price: Number(precoProduto),
+        unit_price: total,
         currency_id: "BRL",
       },
     ];
@@ -62,6 +72,7 @@ export async function POST(req: Request) {
         descricao,
         total,
         unidades,
+        cupom: cupom?.codigo ?? "",
         end_nome: e.nome ?? "",
         end_cpf: soDigitos(e.cpf),
         end_telefone: soDigitos(e.telefone),
