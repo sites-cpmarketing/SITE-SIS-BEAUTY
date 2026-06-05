@@ -18,11 +18,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── URL base derivada do próprio request — funciona em qualquer ambiente
-    // sem depender da variável APP_URL estar configurada no Vercel.
-    const host  = req.headers.get("host") || "";
-    const proto = host.includes("localhost") ? "http" : "https";
-    const BASE  = process.env.APP_URL || `${proto}://${host}`;
+    // ── URL base para back_urls (redirects — browser segue 308)
+    const host      = req.headers.get("host") || "";
+    const proto     = host.includes("localhost") ? "http" : "https";
+    const BASE      = process.env.APP_URL || `${proto}://${host}`;
+
+    // ── URL para notification_url: SEMPRE usa o Host do request
+    // O MP não segue redirects — se sisbeauty.com.br redireciona para www,
+    // o webhook nunca chega. Usando o Host do request garantimos a URL exata
+    // que o Vercel serve, sem passar por redirect.
+    const WEBHOOK_BASE = `${proto}://${host}`;
 
     // ── Preço calculado NO SERVIDOR ──
     const oferta = getOferta(ofertaId);
@@ -71,8 +76,8 @@ export async function POST(req: Request) {
       // "all" redireciona tanto para approved (cartão) quanto pending (PIX/boleto)
       // Sem isso o PIX fica preso na tela do MP após o pagamento
       ...(BASE.startsWith("https://") ? { auto_return: "all" } : {}),
-      // URL de notificação derivada do request — nunca aponta para localhost em prod
-      notification_url: `${BASE}/api/webhook/mercadopago`,
+      // notification_url usa WEBHOOK_BASE (Host do request, sem redirect)
+      notification_url: `${WEBHOOK_BASE}/api/webhook/mercadopago`,
       statement_descriptor: "SISBEAUTY",
       payment_methods: {
         excluded_payment_types:   [],
@@ -116,7 +121,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log(`[checkout] preferência criada: ${data.id} | notification_url: ${BASE}/api/webhook/mercadopago`);
+    console.log(`[checkout] preferência criada: ${data.id} | notification_url: ${WEBHOOK_BASE}/api/webhook/mercadopago`);
     return Response.json({ init_point: data.init_point, id: data.id, ref });
   } catch {
     return Response.json({ error: "Erro interno no checkout" }, { status: 500 });
