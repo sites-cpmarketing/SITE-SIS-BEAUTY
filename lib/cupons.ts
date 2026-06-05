@@ -85,6 +85,24 @@ export const CUPONS: Cupom[] = [
     valor: 10,
     descricao: "10% off — promoção de lançamento",
   },
+    {
+    codigo: "HELOYSA10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
+    {
+    codigo: "AGATHA10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
+    {
+    codigo: "MARILLYA10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
 
 ];
 // ============================================================
