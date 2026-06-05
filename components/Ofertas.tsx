@@ -11,7 +11,7 @@ import {
   type Oferta,
   type Endereco,
 } from "@/lib/produtos";
-import { buscarCupom, aplicarCupom, type Cupom } from "@/lib/cupons";
+import { buscarCupom, aplicarCupom, validarCupom, mensagemErroCupom, type Cupom } from "@/lib/cupons";
 import {
   mascaraCPF,
   mascaraTelefone,
@@ -53,13 +53,13 @@ export default function Ofertas() {
   }
 
   function aplicarCupomCodigo() {
-    const c = buscarCupom(cupomCodigo);
-    if (!c) {
+    const resultado = validarCupom(cupomCodigo, sel.precoPor);
+    if (!resultado.valido) {
       setCupom(null);
-      setCupomErro("Cupom inválido ou expirado.");
+      setCupomErro(mensagemErroCupom(resultado.motivo, resultado.cupom, sel.precoPor));
       return;
     }
-    setCupom(c);
+    setCupom(resultado.cupom);
     setCupomErro("");
   }
 
