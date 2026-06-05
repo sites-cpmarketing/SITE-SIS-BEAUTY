@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documentação privada (ficam só na sua máquina, não vão para o GitHub)
+CUPONS.md
