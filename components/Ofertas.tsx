@@ -128,7 +128,7 @@ export default function Ofertas() {
   return (
     <section id="ofertas" className="bg-cream py-14 px-4 md:py-20 scroll-mt-20">
       <div className="mx-auto max-w-6xl">
-        <div className="text-center mb-10 md:mb-14">
+        <div className="text-center mb-10 md:mb-14" data-reveal>
           <p className="text-rose font-semibold tracking-[0.2em] text-sm uppercase mb-3">
             Escolha seu tratamento
           </p>
@@ -144,7 +144,7 @@ export default function Ofertas() {
 
         {/* Cards das ofertas */}
         <div className="grid md:grid-cols-3 gap-6 items-stretch">
-          {OFERTAS.map((o) => {
+          {OFERTAS.map((o, idx) => {
             const ativo = aberto && sel.id === o.id;
             const desconto = Math.round(
               ((o.precoDe - o.precoPor) / o.precoDe) * 100
@@ -152,6 +152,8 @@ export default function Ofertas() {
             return (
               <div
                 key={o.id}
+                data-reveal
+                data-delay={idx + 1}
                 className={`relative flex flex-col rounded-3xl border-2 bg-perola p-7 transition-all ${
                   o.destaque
                     ? "border-rose shadow-[0_20px_60px_-15px_rgba(185,135,120,0.45)] md:scale-[1.04]"

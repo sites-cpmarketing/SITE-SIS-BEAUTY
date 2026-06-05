@@ -73,7 +73,7 @@ function BarraFreteGratis() {
 /* ----------------------- Header ----------------------- */
 function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-rose-light/60 bg-perola/85 backdrop-blur-md">
+    <header data-header className="sticky top-0 z-40 border-b border-rose-light/60 bg-perola/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <a href="#" className="font-[var(--font-display)] text-xl md:text-2xl font-bold tracking-tight">
           SIS<span className="text-rose"> Beauty</span>
@@ -193,8 +193,13 @@ function FaixaBeneficios() {
   return (
     <section className="border-y border-rose-light bg-perola">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-10 md:grid-cols-4">
-        {itens.map(({ Ico, t }) => (
-          <div key={t} className="flex flex-col items-center gap-3 text-center">
+        {itens.map(({ Ico, t }, idx) => (
+          <div
+            key={t}
+            data-reveal
+            data-delay={(idx % 4) + 1}
+            className="flex flex-col items-center gap-3 text-center"
+          >
             <Ico className="h-9 w-9 text-champagne" />
             <span className="text-sm font-semibold text-cacau">{t}</span>
           </div>
@@ -209,7 +214,10 @@ function Embaixadora() {
   return (
     <section className="bg-cream py-14 px-4 md:py-20">
       <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
-        <div className="relative order-2 mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-[2rem] shadow-soft md:order-1">
+        <div
+          data-reveal
+          className="relative order-2 mx-auto aspect-[4/5] w-full max-w-sm overflow-hidden rounded-[2rem] shadow-soft md:order-1"
+        >
           <Image
             src={IMG.embaixadora}
             alt="Embaixadora SIS Beauty apresentando o produto"
@@ -218,7 +226,7 @@ function Embaixadora() {
             className="object-cover object-top"
           />
         </div>
-        <div className="order-1 md:order-2">
+        <div data-reveal data-delay={1} className="order-1 md:order-2">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
             Por trás da SIS Beauty
           </p>
@@ -268,19 +276,21 @@ function ComoFunciona() {
   return (
     <section id="como-funciona" className="py-14 px-4 md:py-20 scroll-mt-20">
       <div className="mx-auto max-w-6xl text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
+        <p data-reveal className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
           Dois formatos, um só objetivo
         </p>
-        <h2 className="mt-3 text-3xl md:text-4xl">Escolha como quer se cuidar</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-cacau-soft">
+        <h2 data-reveal data-delay={1} className="mt-3 text-3xl md:text-4xl">Escolha como quer se cuidar</h2>
+        <p data-reveal data-delay={2} className="mx-auto mt-4 max-w-2xl text-cacau-soft">
           Goma ou cápsula? Você decide. E quando usa os dois juntos, o resultado
           é ainda mais completo, porque eles agem em sinergia pelos seus fios.
         </p>
         <div className="mt-12 grid gap-7 md:grid-cols-2">
-          {produtos.map((p) => (
+          {produtos.map((p, idx) => (
             <div
               key={p.tipo}
-              className="flex flex-col items-center rounded-3xl border border-rose-light bg-perola p-8 shadow-soft"
+              data-reveal
+              data-delay={idx + 1}
+              className="card-hover flex flex-col items-center rounded-3xl border border-rose-light bg-perola p-8 shadow-soft"
             >
               <div className="relative flex h-64 w-full items-end justify-center">
                 {/* Halo de luz atrás do pote */}
@@ -333,15 +343,20 @@ function BeneficiosDetalhados() {
   return (
     <section id="beneficios" className="bg-cream py-14 px-4 md:py-20 scroll-mt-20">
       <div className="mx-auto max-w-6xl">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
             O que o tratamento faz por você
           </p>
           <h2 className="mt-3 text-3xl md:text-4xl">Resultados que você vê e sente</h2>
         </div>
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {b.map(({ Ico, t, d }) => (
-            <div key={t} className="rounded-2xl bg-perola p-6 shadow-soft">
+          {b.map(({ Ico, t, d }, idx) => (
+            <div
+              key={t}
+              data-reveal
+              data-delay={(idx % 3) + 1}
+              className="card-hover rounded-2xl bg-perola p-6 shadow-soft"
+            >
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-light/40 text-champagne">
                 <Ico className="h-6 w-6" />
               </span>
@@ -365,7 +380,7 @@ function Formula() {
   return (
     <section className="py-14 px-4 md:py-20">
       <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2">
-        <div className="relative mx-auto aspect-square w-full max-w-md">
+        <div data-reveal className="relative mx-auto aspect-square w-full max-w-md">
           <Image
             src={IMG.mockupCapsula}
             alt="Fórmula SIS Beauty"
@@ -375,7 +390,7 @@ function Formula() {
             className="object-contain"
           />
         </div>
-        <div>
+        <div data-reveal data-delay={1}>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
             Fórmula avançada
           </p>
@@ -417,7 +432,7 @@ function Resultados() {
   return (
     <section id="resultados" className="bg-cream py-14 px-4 md:py-20 scroll-mt-20">
       <div className="mx-auto max-w-6xl">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
             Antes e depois
           </p>
@@ -454,16 +469,18 @@ function FAQ() {
   return (
     <section id="faq" className="py-14 px-4 md:py-20 scroll-mt-20">
       <div className="mx-auto max-w-3xl">
-        <div className="text-center">
+        <div className="text-center" data-reveal>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose">
             Dúvidas frequentes
           </p>
           <h2 className="mt-3 text-3xl md:text-4xl">Tudo o que você precisa saber</h2>
         </div>
         <div className="mt-10 space-y-3">
-          {faqs.map((f) => (
+          {faqs.map((f, idx) => (
             <details
               key={f.q}
+              data-reveal
+              data-delay={(idx % 5) + 1}
               className="group rounded-2xl border border-rose-light bg-perola p-5 [&_summary::-webkit-details-marker]:hidden"
             >
               <summary className="flex cursor-pointer items-center justify-between font-semibold text-cacau">
@@ -483,7 +500,7 @@ function FAQ() {
 function CTAFinal() {
   return (
     <section className="px-4 py-14 md:py-20">
-      <div className="mx-auto max-w-4xl text-center">
+      <div className="mx-auto max-w-4xl text-center" data-reveal>
         <h2 className="text-3xl md:text-5xl">
           Seus cabelos dos sonhos começam hoje
         </h2>

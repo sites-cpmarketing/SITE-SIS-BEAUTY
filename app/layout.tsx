@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
+import UiEnhancements from "@/components/UiEnhancements";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -68,8 +69,15 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${playfair.variable} ${montserrat.variable} h-full antialiased`}
     >
+      <head>
+        {/* Sem JS, o conteúdo com animação de scroll continua visível */}
+        <noscript>
+          <style>{`[data-reveal]{opacity:1 !important;transform:none !important;}`}</style>
+        </noscript>
+      </head>
       <body className="min-h-full flex flex-col bg-perola text-cacau">
         {children}
+        <UiEnhancements />
       </body>
     </html>
   );
