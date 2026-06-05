@@ -11,7 +11,7 @@
 
 import crypto from "crypto";
 import { pacoteParaQuantidade } from "@/lib/produtos";
-import { enviarEmailsPedido, type DadosPedido } from "@/lib/email";
+import { enviarEmailsPedido, enviarRastreio, type DadosPedido } from "@/lib/email";
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
 const ME_BASE = process.env.MELHOR_ENVIO_URL || "https://www.melhorenvio.com.br";
@@ -313,14 +313,39 @@ async function gerarEtiqueta(pay: Pay, meta: Meta) {
   }
 
   // 2) Checkout (compra o frete)
-  await fetch(`${ME_BASE}/api/v2/me/shipment/checkout`, {
+  const checkoutRes = await fetch(`${ME_BASE}/api/v2/me/shipment/checkout`, {
     method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
   });
+  if (!checkoutRes.ok) {
+    const err = await checkoutRes.json().catch(() => null);
+    console.error("[ME] falha no checkout do frete:", err);
+    return;
+  }
 
   // 3) Gerar etiqueta
-  await fetch(`${ME_BASE}/api/v2/me/shipment/generate`, {
+  const genRes = await fetch(`${ME_BASE}/api/v2/me/shipment/generate`, {
     method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
   });
+  const generated = await genRes.json().catch(() => null);
+
+  // 4) Extrair código de rastreio e notificar o cliente
+  // A resposta do /generate é um objeto { [orderId]: { tracking: "AA123BR", ... } }
+  const orderData = generated?.[cart.id] as Record<string, unknown> | undefined;
+  const tracking = (orderData?.tracking as string) || (orderData?.tracking_code as string);
+
+  if (tracking) {
+    const emailCliente = pay.payer?.email || "";
+    const nome = s("end_nome") || "cliente";
+    const servico = cart.service?.name as string | undefined;
+    const descricao = s("descricao") || "pedido SIS Beauty";
+    console.log(`[ME] etiqueta gerada — rastreio: ${tracking}`);
+    if (emailCliente) {
+      await enviarRastreio({ nome, emailCliente, codigo: tracking, servico, descricao })
+        .catch((e) => console.error("[email] erro ao enviar rastreio:", e));
+    }
+  } else {
+    console.warn("[ME] etiqueta gerada mas código de rastreio não retornado:", JSON.stringify(generated));
+  }
 
   console.log(`[ME] item no carrinho (order ${cart.id}) para ${pay.external_reference}`);
 }

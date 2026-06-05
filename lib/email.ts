@@ -64,6 +64,44 @@ export type DadosPedido = {
   cpf?: string;
 };
 
+export type DadosRastreio = {
+  nome: string;
+  emailCliente: string;
+  codigo: string;        // ex.: "AA123456789BR"
+  servico?: string;      // ex.: "PAC", "SEDEX"
+  descricao?: string;
+};
+
+/** Envia o código de rastreio ao cliente após a etiqueta ser gerada. */
+export async function enviarRastreio(d: DadosRastreio) {
+  if (!d.emailCliente || !d.codigo) return;
+
+  const linkCorreios = `https://rastreamento.correios.com.br/app/index.php?label=${d.codigo}`;
+  const linkME = `https://melhorrastreio.com.br/rastreio/${d.codigo}`;
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#43302a">
+      <h2 style="color:#c16b56">Seu pedido foi enviado! 📦</h2>
+      <p>Olá, ${d.nome || "cliente"}! O seu ${d.descricao || "pedido SIS Beauty"} foi postado e está a caminho.</p>
+      <p>
+        <strong>Serviço:</strong> ${d.servico || "Correios"}<br/>
+        <strong>Código de rastreio:</strong> <span style="font-size:18px;font-weight:bold;letter-spacing:2px">${d.codigo}</span>
+      </p>
+      <p style="margin:24px 0">
+        <a href="${linkCorreios}"
+           style="background:#c16b56;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+          Rastrear pelo site dos Correios →
+        </a>
+      </p>
+      <p>Ou acesse: <a href="${linkME}">${linkME}</a></p>
+      <p style="color:#6b4f46;font-size:12px;margin-top:32px">
+        SIS Beauty · suplemento alimentar. Em caso de dúvidas, fale conosco pelo WhatsApp.
+      </p>
+    </div>`;
+
+  await enviar(d.emailCliente, `Seu pedido foi enviado! Rastreie aqui 📦`, html);
+}
+
 /** Envia confirmação ao cliente e o registro do pedido para a loja. */
 export async function enviarEmailsPedido(d: DadosPedido) {
   const cliente = `
