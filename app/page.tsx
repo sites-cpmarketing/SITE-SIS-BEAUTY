@@ -164,7 +164,7 @@ function Hero() {
           />
 
           {/* Moldura externa — borda dupla com canto cortado */}
-          <div className="relative w-full max-w-[300px] sm:max-w-[340px] md:max-w-[400px]">
+          <div className="relative w-full max-w-[260px] sm:max-w-[320px] md:max-w-[400px]">
 
             {/* Cantos decorativos */}
             <span aria-hidden className="pointer-events-none absolute -top-2 -left-2 h-8 w-8 rounded-tl-xl border-t-2 border-l-2 border-champagne z-10" />
@@ -172,11 +172,13 @@ function Hero() {
             <span aria-hidden className="pointer-events-none absolute -bottom-2 -left-2 h-8 w-8 rounded-bl-xl border-b-2 border-l-2 border-champagne z-10" />
             <span aria-hidden className="pointer-events-none absolute -bottom-2 -right-2 h-8 w-8 rounded-br-xl border-b-2 border-r-2 border-champagne z-10" />
 
-            {/* Foto dentro da moldura */}
+            {/* Foto dentro da moldura
+                Mobile: proporção 3:4 (menos alta) — rostos centralizados
+                Desktop: proporção 2:3 (mais vertical) */}
             <div
               className="relative overflow-hidden rounded-2xl"
               style={{
-                aspectRatio: "760/1140",
+                aspectRatio: "var(--hero-ratio, 3/4)",
                 boxShadow: "0 24px 64px -16px rgba(74,51,45,0.35), 0 0 0 1px rgba(193,107,86,0.18)",
               }}
             >
@@ -185,9 +187,10 @@ function Hero() {
                 alt="SIS Beauty — Hair Growth Caps e Premium"
                 fill
                 priority
-                quality={92}
-                sizes="(max-width: 640px) 85vw, (max-width: 1024px) 40vw, 400px"
-                className="object-cover object-top"
+                quality={95}
+                sizes="(max-width: 640px) 75vw, (max-width: 1024px) 40vw, 400px"
+                className="object-cover"
+                style={{ objectPosition: "center 20%" }}
               />
               {/* Gradiente sutil na base */}
               <div
