@@ -6,6 +6,7 @@ import { IMG } from "@/lib/produtos";
 import { SITE, waLink } from "@/lib/site";
 import JsonLd from "@/components/JsonLd";
 import StickyComprar from "@/components/StickyComprar";
+import Logo from "@/components/Logo";
 import {
   IcoBroto,
   IcoEscudo,
@@ -102,8 +103,8 @@ function Header() {
   return (
     <header data-header className="sticky top-0 z-40 border-b border-rose-light/60 bg-perola/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <a href="#" className="font-[var(--font-display)] text-xl md:text-2xl font-bold tracking-tight">
-          SIS<span className="text-rose"> Beauty</span>
+        <a href="#" aria-label="SIS Beauty — página inicial">
+          <Logo size="md" priority />
         </a>
         <nav className="hidden gap-7 text-sm font-medium text-cacau-soft md:flex">
           <a href="#como-funciona" className="hover:text-rose">Como funciona</a>
@@ -546,9 +547,7 @@ function Footer() {
     <footer className="border-t border-rose-light bg-perola px-4 py-12">
       <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-3">
         <div>
-          <p className="font-[var(--font-display)] text-2xl font-bold">
-            SIS<span className="text-rose"> Beauty</span>
-          </p>
+          <Logo size="sm" />
           <p className="mt-3 text-sm text-cacau-soft">
             Cuidado capilar de verdade, do jeito que você merece.
           </p>
