@@ -56,19 +56,42 @@ export const CUPONS: Cupom[] = [
     descricao: "99% de desconto para testes",
   },
   {
-    codigo: "LANÇAMENTO20",
+    codigo: "CLARISSY10",
     tipo: "percentual",
-    valor: 20,
-    descricao: "20% off — promoção de lançamento",
-    expira: "2026-12-31",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
   },
-  {
-    codigo: "FRETE30",
-    tipo: "fixo",
-    valor: 30,
-    minimo: 150,
-    descricao: "R$ 30 de desconto em pedidos acima de R$ 150",
+    {
+    codigo: "DREZACUNHA10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
   },
+    {
+    codigo: "JANINE10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
+      {
+    codigo: "NEURY10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
+      {
+    codigo: "SUZANA10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
+    {
+    codigo: "JULLIANE10",
+    tipo: "percentual",
+    valor: 10,
+    descricao: "10% off — promoção de lançamento",
+  },
+
 ];
 // ============================================================
 
