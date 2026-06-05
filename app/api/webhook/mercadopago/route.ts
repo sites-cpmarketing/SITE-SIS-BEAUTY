@@ -114,6 +114,69 @@ async function resolverMetadata(pay: Pay): Promise<Meta> {
   }
 }
 
+type MEServico = {
+  id: number;
+  name?: string;
+  price?: string;
+  delivery_time?: number;
+  error?: string;
+};
+type Pacote = ReturnType<typeof pacoteParaQuantidade>;
+
+/**
+ * Calcula o frete real para o destino e escolhe um serviço que ATENDA o trecho.
+ * Sem isso, um service fixo (ex.: PAC) falharia quando a transportadora não
+ * cobre o CEP ou as dimensões estouram o limite, deixando o pedido sem etiqueta.
+ *
+ * Preferência: serviço padrão (.env) → mais barato dos Correios (PAC/SEDEX)
+ *              → mais barato de qualquer transportadora disponível.
+ */
+async function escolherServico(
+  headers: Record<string, string>,
+  cepDestino: string,
+  pkg: Pacote
+): Promise<number> {
+  try {
+    const r = await fetch(`${ME_BASE}/api/v2/me/shipment/calculate`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        from: { postal_code: REMETENTE.postal_code },
+        to: { postal_code: cepDestino },
+        package: {
+          height: pkg.height,
+          width: pkg.width,
+          length: pkg.length,
+          weight: pkg.weight,
+        },
+      }),
+    });
+    const data = (await r.json()) as MEServico[] | unknown;
+    if (!Array.isArray(data)) return SERVICO_PADRAO;
+
+    // Só serviços que realmente atendem (sem erro e com preço válido)
+    const ok = data.filter((x) => !x.error && Number(x.price) > 0);
+    if (ok.length === 0) {
+      console.error("[ME] nenhum serviço atende o trecho — usando padrão", cepDestino);
+      return SERVICO_PADRAO;
+    }
+    // 1) serviço padrão, se disponível
+    if (ok.some((x) => x.id === SERVICO_PADRAO)) return SERVICO_PADRAO;
+    // 2) Correios (PAC=1 / SEDEX=2) mais barato disponível
+    const correios = ok
+      .filter((x) => x.id === 1 || x.id === 2)
+      .sort((a, b) => Number(a.price) - Number(b.price));
+    if (correios.length) return correios[0].id;
+    // 3) opção mais barata de qualquer transportadora que atenda
+    const maisBarato = [...ok].sort((a, b) => Number(a.price) - Number(b.price))[0];
+    console.warn(`[ME] PAC/SEDEX indisponíveis p/ ${cepDestino} — usando ${maisBarato.name} (id ${maisBarato.id})`);
+    return maisBarato.id;
+  } catch (e) {
+    console.error("[ME] erro ao calcular serviço — usando padrão:", e);
+    return SERVICO_PADRAO;
+  }
+}
+
 /** Fluxo Melhor Envio: adiciona ao carrinho -> checkout -> gera etiqueta. */
 async function gerarEtiqueta(pay: Pay) {
   const meta = await resolverMetadata(pay);
@@ -130,9 +193,12 @@ async function gerarEtiqueta(pay: Pay) {
     "User-Agent": UA,
   };
 
+  // Escolhe um serviço que realmente entregue neste CEP/dimensão
+  const service = await escolherServico(headers, cep, pkg);
+
   // 1) Adiciona ao carrinho com o endereço coletado no checkout do site
   const cartPayload = {
-    service: SERVICO_PADRAO,
+    service,
     from: REMETENTE,
     to: {
       name: s("end_nome") || "Cliente",
