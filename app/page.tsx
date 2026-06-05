@@ -1,7 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import Ofertas from "@/components/Ofertas";
 import CarrosselResultados from "@/components/CarrosselResultados";
 import { IMG } from "@/lib/produtos";
+import { SITE, waLink } from "@/lib/site";
+import JsonLd from "@/components/JsonLd";
 import {
   IcoBroto,
   IcoEscudo,
@@ -11,19 +14,13 @@ import {
   IcoCapsula,
 } from "@/components/icons";
 
-/* ===========================================================
-   CONTATOS — TROQUE pelos seus dados reais
-   =========================================================== */
-const WHATSAPP = "5562994528264"; // (62) 9 9452-8264
-const INSTAGRAM = "https://instagram.com/sisbeauty";
-const EMAIL = "contato@sisbeauty.com.br";
-const waLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
-  "Olá! Quero saber mais sobre o tratamento SIS Beauty 💜"
-)}`;
+const INSTAGRAM = SITE.contato.instagram;
+const EMAIL = SITE.contato.email;
 
 export default function Home() {
   return (
     <>
+      <JsonLd />
       <BarraFreteGratis />
       <Header />
       <main>
@@ -53,14 +50,19 @@ function BarraFreteGratis() {
   );
   return (
     <div className="overflow-hidden bg-rose py-2 text-white">
-      <div className="flex w-max animate-marquee whitespace-nowrap">
+      {/* Mensagem única para leitores de tela (o marquee é decorativo) */}
+      <span className="sr-only">Frete grátis para todo o Brasil.</span>
+      <div
+        className="flex w-max animate-marquee whitespace-nowrap"
+        aria-hidden="true"
+      >
         {/* Conteúdo duplicado para o loop ficar contínuo */}
         <div className="flex shrink-0">
           {Array.from({ length: 8 }).map((_, i) => (
             <span key={`a-${i}`}>{item}</span>
           ))}
         </div>
-        <div className="flex shrink-0" aria-hidden="true">
+        <div className="flex shrink-0">
           {Array.from({ length: 8 }).map((_, i) => (
             <span key={`b-${i}`}>{item}</span>
           ))}
@@ -536,19 +538,29 @@ function Footer() {
           </ul>
         </div>
         <div className="text-sm">
-          <p className="font-semibold">Contato</p>
+          <p className="font-semibold">Contato &amp; Institucional</p>
           <ul className="mt-3 space-y-2 text-cacau-soft">
-            <li><a href={waLink} className="hover:text-rose">WhatsApp</a></li>
+            <li><a href={waLink()} className="hover:text-rose">WhatsApp</a></li>
             <li><a href={INSTAGRAM} className="hover:text-rose">Instagram</a></li>
             <li><a href={`mailto:${EMAIL}`} className="hover:text-rose">{EMAIL}</a></li>
+            <li><Link href="/privacidade" className="hover:text-rose">Política de Privacidade</Link></li>
+            <li><Link href="/termos" className="hover:text-rose">Termos de Uso</Link></li>
+            <li><Link href="/trocas" className="hover:text-rose">Trocas e Devoluções</Link></li>
           </ul>
         </div>
       </div>
       <div className="mx-auto mt-10 max-w-6xl border-t border-rose-light pt-6 text-center text-xs text-cacau-soft">
-        <p>© {new Date().getFullYear()} SIS Beauty. Todos os direitos reservados.</p>
+        <p>
+          {SITE.empresa.razaoSocial} · {SITE.empresa.documento}
+        </p>
+        <p className="mt-1">{SITE.empresa.endereco}</p>
+        <p className="mt-3">
+          © {new Date().getFullYear()} {SITE.nome}. Todos os direitos
+          reservados.
+        </p>
         <p className="mt-2">
           Este produto é um suplemento alimentar e não substitui uma alimentação
-          equilibrada. Resultados podem variar.
+          equilibrada. Resultados podem variar de pessoa para pessoa.
         </p>
       </div>
     </footer>
@@ -559,7 +571,7 @@ function Footer() {
 function WhatsappFloat() {
   return (
     <a
-      href={waLink}
+      href={waLink()}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco no WhatsApp"
