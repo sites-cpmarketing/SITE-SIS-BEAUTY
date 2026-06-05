@@ -9,6 +9,8 @@
  * fluxo pronto (cart -> checkout -> generate), lendo o que estiver disponível.
  */
 
+import { pacoteParaQuantidade } from "@/lib/produtos";
+
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
 const ME_BASE = process.env.MELHOR_ENVIO_URL || "https://www.melhorenvio.com.br";
 const ME_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
@@ -117,6 +119,9 @@ async function gerarEtiqueta(pay: Pay) {
   const meta = await resolverMetadata(pay);
   const s = (k: string) => String(meta[k] ?? "");
   const cep = s("end_cep").replace(/\D/g, "");
+  // Caixa e peso reais conforme a quantidade de potes do pedido
+  const unidades = Math.max(1, Number(meta.unidades) || 1);
+  const pkg = pacoteParaQuantidade(unidades);
 
   const headers = {
     Authorization: `Bearer ${ME_TOKEN}`,
@@ -149,7 +154,7 @@ async function gerarEtiqueta(pay: Pay) {
         unitary_value: Number(meta.total) || 97,
       },
     ],
-    volumes: [{ height: 12, width: 13, length: 9, weight: 0.4 }],
+    volumes: [{ height: pkg.height, width: pkg.width, length: pkg.length, weight: pkg.weight }],
     options: {
       insurance_value: Number(meta.total) || 97,
       receipt: false,

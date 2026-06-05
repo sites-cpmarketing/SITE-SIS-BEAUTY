@@ -4,8 +4,10 @@ const APP_URL = process.env.APP_URL || "http://localhost:3000";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { ofertaId, descricao, precoProduto, total, endereco } = body;
+    const { ofertaId, descricao, precoProduto, total, endereco, qtdGoma, qtdCapsula } = body;
     const e = (endereco ?? {}) as Record<string, string>;
+    // Total de potes do pedido — usado pelo webhook p/ dimensionar a caixa/peso
+    const unidades = Math.max(1, (Number(qtdGoma) || 0) + (Number(qtdCapsula) || 0));
     const soDigitos = (v?: string) => String(v ?? "").replace(/\D/g, "");
 
     if (!MP_TOKEN) {
@@ -59,6 +61,7 @@ export async function POST(req: Request) {
         oferta_id: ofertaId,
         descricao,
         total,
+        unidades,
         end_nome: e.nome ?? "",
         end_cpf: soDigitos(e.cpf),
         end_telefone: soDigitos(e.telefone),
