@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TrackPurchase from "@/components/TrackPurchase";
 
 export default async function Obrigado({
   searchParams,
@@ -10,6 +11,8 @@ export default async function Obrigado({
 
   return (
     <main className="flex min-h-[80vh] items-center justify-center px-4 py-20">
+      {/* Conversão registrada apenas quando o pagamento foi confirmado */}
+      {!pendente && <TrackPurchase />}
       <div className="max-w-lg rounded-3xl border border-rose-light bg-perola p-10 text-center shadow-soft">
         <span className="text-6xl">{pendente ? "⏳" : "💜"}</span>
         <h1 className="mt-5 text-3xl md:text-4xl">

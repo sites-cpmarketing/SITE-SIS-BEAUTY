@@ -18,6 +18,7 @@ import {
   mascaraCEP,
   cpfValido,
 } from "@/lib/validacao";
+import { trackEvent } from "@/lib/tracking";
 
 export default function Ofertas() {
   const [sel, setSel] = useState<Oferta>(OFERTAS[2]);
@@ -123,6 +124,7 @@ export default function Ofertas() {
     if (!escolhaFeita || !enderecoOk) return;
     setCheckoutLoad(true);
     setCheckoutErro("");
+    trackEvent("InitiateCheckout", { value: total, currency: "BRL" });
     try {
       const r = await fetch("/api/checkout", {
         method: "POST",
@@ -140,7 +142,7 @@ export default function Ofertas() {
       const data = await r.json();
       if (!r.ok || !data.init_point)
         throw new Error(data?.error || "Não foi possível iniciar o pagamento.");
-      window.location.href = data.init_point;
+      window.location.assign(data.init_point);
     } catch (e) {
       setCheckoutErro(
         e instanceof Error ? e.message : "Erro ao iniciar o pagamento."

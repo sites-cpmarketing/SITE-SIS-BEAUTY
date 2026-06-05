@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
 import UiEnhancements from "@/components/UiEnhancements";
+import Analytics from "@/components/Analytics";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -78,6 +79,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-perola text-cacau">
         {children}
         <UiEnhancements />
+        <Analytics />
       </body>
     </html>
   );
