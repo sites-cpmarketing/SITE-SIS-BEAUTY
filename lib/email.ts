@@ -1,42 +1,34 @@
 /**
- * Envio de e-mails transacionais via SMTP (Hostinger ou qualquer provedor).
+ * Envio de e-mails transacionais via Resend.
  *
  * Configure no .env:
- *   SMTP_HOST / SMTP_PORT / SMTP_SECURE / SMTP_USER / SMTP_PASS
- *   EMAIL_FROM   → remetente (ex.: "SIS Beauty <pedidos@sisbeauty.com.br>")
- *   LOJA_EMAIL   → e-mail que recebe o aviso de novo pedido
+ *   RESEND_API_KEY  → chave de API do Resend (https://resend.com/api-keys)
+ *   EMAIL_FROM      → remetente verificado (ex.: "SIS Beauty <pedidos@sisbeauty.com.br>")
+ *   LOJA_EMAIL      → e-mail que recebe o aviso de novo pedido
  */
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 // ── Transport ────────────────────────────────────────────────────────────────
 
-function criarTransporter() {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!host || !user || !pass) return null;
-  const port = parseInt(process.env.SMTP_PORT || "465", 10);
-  const secure = process.env.SMTP_SECURE !== "false";
-  return nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
-}
-
-const FROM      = process.env.EMAIL_FROM   || `SIS Beauty <${process.env.SMTP_USER}>`;
+const FROM       = process.env.EMAIL_FROM  || "SIS Beauty <onboarding@resend.dev>";
 const LOJA_EMAIL = process.env.LOJA_EMAIL  || "contato@sisbeauty.com.br";
-const WA_LINK   = "https://wa.me/5562994528264";
+const WA_LINK    = "https://wa.me/5562994528264";
 
 async function enviar(to: string, subject: string, html: string) {
   if (!to) return;
-  const transporter = criarTransporter();
-  if (!transporter) {
-    console.warn("[email] SMTP não configurado (SMTP_HOST/USER/PASS ausentes).");
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn("[email] RESEND_API_KEY não configurado — e-mail ignorado.");
     return;
   }
+  const resend = new Resend(apiKey);
   try {
-    const info = await transporter.sendMail({ from: FROM, to, subject, html });
-    console.log("[email] enviado:", info.messageId);
+    const { data, error } = await resend.emails.send({ from: FROM, to, subject, html });
+    if (error) console.error("[email] erro Resend:", error);
+    else console.log("[email] enviado:", data?.id);
   } catch (e) {
-    console.error("[email] erro ao enviar:", e);
+    console.error("[email] exceção ao enviar:", e);
   }
 }
 
