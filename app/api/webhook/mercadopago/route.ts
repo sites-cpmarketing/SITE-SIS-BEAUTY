@@ -171,15 +171,15 @@ async function gerarEtiqueta(pay: Pay) {
     return;
   }
 
-  // 2) Checkout (compra o frete) — descomente quando tiver saldo na conta ME
-  // await fetch(`${ME_BASE}/api/v2/me/shipment/checkout`, {
-  //   method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
-  // });
+  // 2) Checkout (compra o frete)
+  await fetch(`${ME_BASE}/api/v2/me/shipment/checkout`, {
+    method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
+  });
 
-  // 3) Gerar etiqueta — descomente após o checkout acima
-  // await fetch(`${ME_BASE}/api/v2/me/shipment/generate`, {
-  //   method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
-  // });
+  // 3) Gerar etiqueta
+  await fetch(`${ME_BASE}/api/v2/me/shipment/generate`, {
+    method: "POST", headers, body: JSON.stringify({ orders: [cart.id] }),
+  });
 
   console.log(`[ME] item no carrinho (order ${cart.id}) para ${pay.external_reference}`);
 }
