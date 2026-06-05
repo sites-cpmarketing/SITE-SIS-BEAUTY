@@ -92,6 +92,7 @@ export async function POST(req: Request) {
         unidades,
         cupom:           cupom?.codigo ?? "",
         end_nome:        e.nome        ?? "",
+        end_email:       e.email       ?? "",   // ← e-mail coletado no checkout
         end_cpf:         soDigitos(e.cpf),
         end_telefone:    soDigitos(e.telefone),
         end_cep:         soDigitos(e.cep),

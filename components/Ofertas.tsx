@@ -361,6 +361,12 @@ export default function Ofertas() {
                           onChange={(v) => setCampo("nome", v)}
                           placeholder="Quem vai receber"
                         />
+                        <Campo
+                          label="E-mail"
+                          value={end.email}
+                          onChange={(v) => setCampo("email", v)}
+                          placeholder="seu@email.com"
+                        />
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <Campo

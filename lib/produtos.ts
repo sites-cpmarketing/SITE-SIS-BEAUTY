@@ -168,6 +168,7 @@ export const brl = (v: number) =>
 /** Endereço de entrega coletado no checkout (usado pelo Melhor Envio). */
 export type Endereco = {
   nome: string;
+  email: string;
   cpf: string;
   telefone: string;
   cep: string;
@@ -181,6 +182,7 @@ export type Endereco = {
 
 export const ENDERECO_VAZIO: Endereco = {
   nome: "",
+  email: "",
   cpf: "",
   telefone: "",
   cep: "",
@@ -198,6 +200,7 @@ export const ENDERECO_VAZIO: Endereco = {
 export const enderecoValido = (e: Endereco): boolean =>
   !!(
     e.nome.trim() &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.email) &&
     cpfValido(e.cpf) &&
     telefoneValido(e.telefone) &&
     e.cep.replace(/\D/g, "").length === 8 &&

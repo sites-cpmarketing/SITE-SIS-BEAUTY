@@ -173,6 +173,22 @@ function assinaturaValida(req: Request, dataId: string): boolean {
   }
 }
 
+/** Resolve o e-mail do cliente: metadata tem prioridade sobre payer.email do MP.
+ *  PIX frequentemente retorna e-mail mascarado (***@***.com) via payer — usar
+ *  o e-mail coletado no formulário do checkout é mais confiável. */
+function resolverEmailCliente(pay: Pay, meta: Meta): string {
+  const s = (k: string) => String(meta[k] ?? "");
+  const emailMeta = s("end_email");
+  if (emailMeta && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailMeta) && !emailMeta.includes("*")) {
+    return emailMeta;
+  }
+  const emailPayer = pay.payer?.email ?? "";
+  if (emailPayer && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailPayer) && !emailPayer.includes("*")) {
+    return emailPayer;
+  }
+  return "";
+}
+
 /** Monta os dados do pedido para os e-mails a partir do metadata. */
 function montarDadosEmail(pay: Pay, meta: Meta): DadosPedido {
   const s = (k: string) => String(meta[k] ?? "");
@@ -189,7 +205,7 @@ function montarDadosEmail(pay: Pay, meta: Meta): DadosPedido {
   return {
     ref: pay.external_reference,
     nome: s("end_nome"),
-    emailCliente: pay.payer?.email || "",
+    emailCliente: resolverEmailCliente(pay, meta),
     descricao: s("descricao") || "Tratamento capilar",
     total,
     endereco,
@@ -314,7 +330,7 @@ async function dispararWebhookPagamento(pay: Pay, meta: Meta) {
     data_pagamento:  new Date().toISOString(),
     // ── Dados do comprador ──
     nome:            s("end_nome"),
-    email:           pay.payer?.email ?? "",
+    email:           resolverEmailCliente(pay, meta),
     telefone:        normalizarTelefone(s("end_telefone")),
     cpf:             s("end_cpf"),
     // ── Endereço de entrega ──
