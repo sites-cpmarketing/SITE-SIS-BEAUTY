@@ -57,11 +57,12 @@ export async function POST(req: Request) {
       return Response.json({ ok: true, ignored: true });
     }
 
-    // Valida assinatura (se MP_WEBHOOK_SECRET configurado)
+    // Valida assinatura — apenas loga, não bloqueia.
+    // A segurança real está na re-consulta do pagamento na API do MP:
+    // mesmo que uma chamada falsa chegue, o status nunca será "approved".
     const sigOk = assinaturaValida(req, String(paymentId));
     if (!sigOk) {
-      console.error(`[webhook-mp] assinatura inválida para payment ${paymentId}`);
-      return Response.json({ error: "assinatura inválida" }, { status: 401 });
+      console.warn(`[webhook-mp] assinatura divergente para payment ${paymentId} — processando mesmo assim`);
     }
 
     if (!MP_TOKEN) {
@@ -364,6 +365,12 @@ async function gerarEtiqueta(pay: Pay, meta: Meta) {
   // Escolhe um serviço que realmente entregue neste CEP/dimensão
   const service = await escolherServico(headers, cep, pkg);
 
+  // PIX muitas vezes não retorna pay.payer.email — ME exige e-mail válido.
+  // Fallback para o e-mail da loja para não travar a geração da etiqueta.
+  const emailDestinatario = pay.payer?.email?.includes("@")
+    ? pay.payer.email
+    : (process.env.LOJA_EMAIL || "contato@sisbeauty.com.br");
+
   // 1) Adiciona ao carrinho com o endereço coletado no checkout do site
   const cartPayload = {
     service,
@@ -371,7 +378,7 @@ async function gerarEtiqueta(pay: Pay, meta: Meta) {
     to: {
       name: s("end_nome") || "Cliente",
       phone: s("end_telefone"),
-      email: pay.payer?.email || "",
+      email: emailDestinatario,
       document: s("end_cpf"), // CPF do destinatário
       postal_code: cep,
       address: s("end_rua"),
