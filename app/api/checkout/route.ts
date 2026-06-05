@@ -44,17 +44,22 @@ export async function POST(req: Request) {
     const preference = {
       items,
       external_reference: ref,
-      // Pré-preenche os dados do comprador no checkout do Mercado Pago
+      // Pré-preenche os dados do comprador no checkout do Mercado Pago.
+      // O CPF (identification) é obrigatório para o PIX aparecer.
       payer: {
-        name: e.nome || undefined,
-        phone: e.telefone ? { number: soDigitos(e.telefone) } : undefined,
-        identification: e.cpf
+        name:  e.nome    || undefined,
+        email: e.email   || undefined,
+        phone: e.telefone
+          ? { area_code: soDigitos(e.telefone).slice(0, 2),
+              number:     soDigitos(e.telefone).slice(2) }
+          : undefined,
+        identification: soDigitos(e.cpf).length === 11
           ? { type: "CPF", number: soDigitos(e.cpf) }
           : undefined,
         address: {
-          zip_code: soDigitos(e.cep),
-          street_name: e.rua || undefined,
-          street_number: e.numero || undefined,
+          zip_code:      soDigitos(e.cep)  || undefined,
+          street_name:   e.rua             || undefined,
+          street_number: e.numero          || undefined,
         },
       },
       back_urls: {
@@ -66,6 +71,13 @@ export async function POST(req: Request) {
       ...(APP_URL.startsWith("https://") ? { auto_return: "approved" } : {}),
       notification_url: `${APP_URL}/api/webhook/mercadopago`,
       statement_descriptor: "SISBEAUTY",
+      // Métodos de pagamento — garante que PIX (bank_transfer) apareça
+      payment_methods: {
+        excluded_payment_types:   [],   // nada excluído
+        excluded_payment_methods: [],   // nada excluído
+        installments: 12,              // máximo de parcelas no cartão
+        default_installments: 1,
+      },
       // Endereço completo no metadata — o webhook usa p/ gerar a etiqueta
       metadata: {
         oferta_id: ofertaId,
