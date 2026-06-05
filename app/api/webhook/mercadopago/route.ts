@@ -12,6 +12,7 @@
 import crypto from "crypto";
 import { pacoteParaQuantidade } from "@/lib/produtos";
 import { enviarEmailsPedido, enviarRastreio, type DadosPedido } from "@/lib/email";
+import { normalizarTelefone } from "@/lib/validacao";
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
 const ME_BASE = process.env.MELHOR_ENVIO_URL || "https://www.melhorenvio.com.br";
@@ -281,7 +282,7 @@ async function dispararWebhookPagamento(pay: Pay, meta: Meta) {
     // ── Dados do comprador ──
     nome:            s("end_nome"),
     email:           pay.payer?.email ?? "",
-    telefone:        s("end_telefone"),
+    telefone:        normalizarTelefone(s("end_telefone")),
     cpf:             s("end_cpf"),
     // ── Endereço de entrega ──
     cep:             s("end_cep"),

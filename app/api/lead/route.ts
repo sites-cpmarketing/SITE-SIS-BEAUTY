@@ -6,10 +6,15 @@
  *  - fonte "checkout"        → CHECKOUT_WEBHOOK_URL  (formulário completo)
  */
 
+import { normalizarTelefone } from "@/lib/validacao";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { fonte } = body as { fonte?: string };
+
+    // Normaliza telefone para 55DDD9NNNNNNNN em qualquer campo que possa tê-lo
+    if (body.telefone) body.telefone = normalizarTelefone(body.telefone);
 
     // Escolhe o webhook correto pela fonte
     const webhookUrl =
