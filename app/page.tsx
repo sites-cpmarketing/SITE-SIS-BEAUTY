@@ -485,7 +485,7 @@ function Resultados() {
 function FAQ() {
   const faqs = [
     { q: "Em quanto tempo vejo resultados?", a: "Os primeiros sinais costumam aparecer entre 4 e 8 semanas de uso contínuo. Para o resultado completo, recomendamos o tratamento de 4 meses, que garante a nutrição constante dos fios." },
-    { q: "Devo escolher goma ou cápsula?", a: "Os dois têm o mesmo objetivo. A goma é mais prática e saborosa; a cápsula é mais concentrada. Muitas clientes usam os dois juntos para potencializar os resultados, e por isso o kit completo permite montar como você preferir." },
+    { q: "Devo escolher goma ou cápsula?", a: "Goma ou cápsula? Você decide. E quando usa os dois juntos, os resultados são ainda mais completos, pois atuam em sinergia para fortalecer e cuidar dos seus fios." },
     { q: "Como devo tomar?", a: "Siga sempre a orientação do rótulo. De forma geral, o uso é diário e pode ser feito no horário que for mais fácil de manter na sua rotina." },
     { q: "Tem contraindicação?", a: "Por ser um suplemento alimentar, é seguro para a maioria das pessoas. Gestantes, lactantes, menores de 18 anos ou pessoas com condições de saúde específicas devem consultar um profissional antes de usar." },
     { q: "O frete é grátis mesmo?", a: "Sim! O frete é grátis para todo o Brasil, sem valor mínimo de compra. Você paga apenas pelo tratamento — o envio é por nossa conta." },
