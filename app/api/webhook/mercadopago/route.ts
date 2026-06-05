@@ -67,14 +67,21 @@ export async function POST(req: Request) {
     // Pagamento aprovado — resolve os dados do pedido uma única vez
     const meta = await resolverMetadata(pay as Pay);
 
-    // 1) E-mails: confirmação ao cliente + registro do pedido p/ a loja
+    // 1) Webhook de confirmação de pagamento (Make / n8n / Zapier)
+    try {
+      await dispararWebhookPagamento(pay as Pay, meta);
+    } catch (e) {
+      console.error("[webhook] erro ao notificar webhook de pagamento:", e);
+    }
+
+    // 2) E-mails: confirmação ao cliente + registro do pedido p/ a loja
     try {
       await enviarEmailsPedido(montarDadosEmail(pay as Pay, meta));
     } catch (e) {
       console.error("[webhook] erro ao enviar e-mails:", e);
     }
 
-    // 2) Etiqueta no Melhor Envio
+    // 3) Etiqueta no Melhor Envio
     if (ME_TOKEN && REMETENTE.postal_code) {
       try {
         await gerarEtiqueta(pay as Pay, meta);
@@ -245,6 +252,64 @@ async function escolherServico(
   } catch (e) {
     console.error("[ME] erro ao calcular serviço — usando padrão:", e);
     return SERVICO_PADRAO;
+  }
+}
+
+/**
+ * Dispara o webhook de confirmação de pagamento para CHECKOUT_WEBHOOK_URL.
+ * O payload inclui todos os dados do checkout + status do pagamento.
+ * O campo "fonte" diferencia este evento do lead inicial (fonte: "checkout").
+ */
+async function dispararWebhookPagamento(pay: Pay, meta: Meta) {
+  const url = process.env.CHECKOUT_WEBHOOK_URL;
+  if (!url) {
+    console.log("[webhook] CHECKOUT_WEBHOOK_URL não configurado — confirmação ignorada.");
+    return;
+  }
+
+  const s = (k: string) => String(meta[k] ?? "");
+  const total = Number(meta.total) || 0;
+  const complemento = s("end_complemento") ? ` - ${s("end_complemento")}` : "";
+
+  const payload = {
+    fonte:           "pagamento_confirmado",
+    status:          "aprovado",
+    // ── Identificação do pagamento ──
+    pagamento_id:    String((pay as Record<string, unknown>).id ?? ""),
+    referencia:      pay.external_reference ?? "",
+    data_pagamento:  new Date().toISOString(),
+    // ── Dados do comprador ──
+    nome:            s("end_nome"),
+    email:           pay.payer?.email ?? "",
+    telefone:        s("end_telefone"),
+    cpf:             s("end_cpf"),
+    // ── Endereço de entrega ──
+    cep:             s("end_cep"),
+    rua:             s("end_rua"),
+    numero:          s("end_numero"),
+    complemento:     s("end_complemento"),
+    bairro:          s("end_bairro"),
+    cidade:          s("end_cidade"),
+    uf:              s("end_uf"),
+    endereco_completo: `${s("end_rua")}, ${s("end_numero")}${complemento} — ${s("end_bairro")}, ${s("end_cidade")}/${s("end_uf")} — CEP ${s("end_cep")}`,
+    // ── Pedido ──
+    produto:         s("descricao") || "Tratamento capilar",
+    total:           total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    total_numerico:  total,
+    cupom:           s("cupom"),
+    origem:          "SIS Beauty",
+  };
+
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!r.ok) {
+    console.error("[webhook] falha ao notificar pagamento:", r.status, await r.text().catch(() => ""));
+  } else {
+    console.log("[webhook] confirmação de pagamento enviada com sucesso.");
   }
 }
 
