@@ -1,42 +1,42 @@
 /**
- * Recebe dados do modal do WhatsApp e encaminha para o webhook configurado.
- * Configure LEAD_WEBHOOK_URL no .env para ativar (ex: Make, n8n, Zapier, etc.)
+ * Recebe dados de leads e encaminha para o webhook configurado.
+ *
+ * Duas origens:
+ *  - fonte "whatsapp-modal"  → LEAD_WEBHOOK_URL
+ *  - fonte "checkout"        → CHECKOUT_WEBHOOK_URL  (formulário completo)
  */
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { nome, email, telefone, fonte } = body as {
-      nome?: string;
-      email?: string;
-      telefone?: string;
-      fonte?: string;
-    };
+    const { fonte } = body as { fonte?: string };
 
-    const webhookUrl = process.env.LEAD_WEBHOOK_URL;
+    // Escolhe o webhook correto pela fonte
+    const webhookUrl =
+      fonte === "checkout"
+        ? process.env.CHECKOUT_WEBHOOK_URL
+        : process.env.LEAD_WEBHOOK_URL;
+
+    const payload = {
+      ...body,
+      fonte: fonte || "site",
+      data: new Date().toISOString(),
+      origem: "SIS Beauty",
+    };
 
     if (webhookUrl) {
       await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome:     nome     || "",
-          email:    email    || "",
-          telefone: telefone || "",
-          fonte:    fonte    || "site",
-          data:     new Date().toISOString(),
-          origem:   "SIS Beauty",
-        }),
+        body: JSON.stringify(payload),
       });
     } else {
-      // Sem webhook configurado: apenas loga localmente
-      console.log("[lead] novo lead (LEAD_WEBHOOK_URL não configurado):", { nome, email, telefone });
+      console.log(`[lead] (${fonte || "site"}) webhook não configurado:`, payload);
     }
 
     return Response.json({ ok: true });
   } catch (e) {
-    // Não falha o fluxo — o usuário ainda vai para o WhatsApp
-    console.error("[lead] erro ao enviar lead:", e);
+    console.error("[lead] erro:", e);
     return Response.json({ ok: true });
   }
 }

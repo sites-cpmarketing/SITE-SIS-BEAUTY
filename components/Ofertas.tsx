@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   OFERTAS,
@@ -119,6 +119,40 @@ export default function Ofertas() {
   const cpfInvalido = end.cpf.length > 0 && !cpfValido(end.cpf);
   const enderecoOk = enderecoValido(end);
   const podeFinalizar = escolhaFeita && enderecoOk && !checkoutLoad;
+
+  // Dispara uma vez quando o formulário fica completo (botão liberado).
+  // Reseta se o usuário invalida o form para capturar novamente ao revalidar.
+  const checkoutLeadEnviado = useRef(false);
+  useEffect(() => {
+    if (podeFinalizar && !checkoutLeadEnviado.current) {
+      checkoutLeadEnviado.current = true;
+      fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fonte:       "checkout",
+          nome:        end.nome,
+          telefone:    end.telefone,
+          cpf:         end.cpf,
+          cep:         end.cep,
+          rua:         end.rua,
+          numero:      end.numero,
+          complemento: end.complemento,
+          bairro:      end.bairro,
+          cidade:      end.cidade,
+          uf:          end.uf,
+          produto:     sel.nome,
+          qtd_goma:    qtdGoma,
+          qtd_capsula: qtdCapsula,
+          total:       brl(total),
+          cupom:       cupom?.codigo ?? "",
+        }),
+      }).catch(() => {}); // fire-and-forget, nunca bloqueia o fluxo
+    }
+    if (!podeFinalizar) {
+      checkoutLeadEnviado.current = false; // reseta se form ficar inválido
+    }
+  }, [podeFinalizar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function finalizar() {
     if (!escolhaFeita || !enderecoOk) return;
