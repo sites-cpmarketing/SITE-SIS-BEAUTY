@@ -1,31 +1,55 @@
 /**
- * Envio de e-mails transacionais via Resend (https://resend.com).
- * Serve como registro do pedido (e-mail p/ a loja) e confirmação (cliente).
+ * Envio de e-mails transacionais via SMTP (Hostinger ou qualquer provedor).
+ * Serve como registro do pedido (e-mail p/ a loja) e confirmação ao cliente.
  *
  * Configure no .env:
- *   RESEND_API_KEY  → chave da API Resend (sem ela, as funções não fazem nada)
- *   EMAIL_FROM      → remetente verificado (ex.: "SIS Beauty <pedidos@seudominio>")
- *   LOJA_EMAIL      → e-mail que recebe o aviso de novo pedido
+ *   SMTP_HOST     → ex.: smtp.hostinger.com
+ *   SMTP_PORT     → ex.: 465 (SSL) ou 587 (TLS/STARTTLS)
+ *   SMTP_SECURE   → "true" para SSL (porta 465), "false" para STARTTLS (587)
+ *   SMTP_USER     → e-mail completo (ex.: pedidos@sisbeauty.com.br)
+ *   SMTP_PASS     → senha do e-mail
+ *   EMAIL_FROM    → remetente (ex.: "SIS Beauty <pedidos@sisbeauty.com.br>")
+ *   LOJA_EMAIL    → e-mail que recebe o aviso de novo pedido
  */
 
-const RESEND_KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.EMAIL_FROM || "SIS Beauty <onboarding@resend.dev>";
+import nodemailer from "nodemailer";
+
+function criarTransporter() {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !user || !pass) return null;
+
+  const port = parseInt(process.env.SMTP_PORT || "465", 10);
+  const secure = process.env.SMTP_SECURE !== "false"; // padrão: true (SSL)
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+}
+
+const FROM = process.env.EMAIL_FROM || `SIS Beauty <${process.env.SMTP_USER}>`;
 const LOJA_EMAIL = process.env.LOJA_EMAIL || "contato@sisbeauty.com.br";
 
 async function enviar(to: string, subject: string, html: string) {
-  if (!RESEND_KEY || !to) return; // sem chave/destinatário → no-op
+  if (!to) return;
+
+  const transporter = criarTransporter();
+  if (!transporter) {
+    // SMTP não configurado → loga e segue sem erros
+    console.warn("[email] SMTP não configurado (SMTP_HOST/SMTP_USER/SMTP_PASS ausentes).");
+    return;
+  }
+
   try {
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from: FROM, to, subject, html }),
-    });
-    if (!r.ok) console.error("[email] falha ao enviar:", await r.text());
+    const info = await transporter.sendMail({ from: FROM, to, subject, html });
+    console.log("[email] enviado:", info.messageId);
   } catch (e) {
-    console.error("[email] erro:", e);
+    console.error("[email] erro ao enviar:", e);
   }
 }
 
