@@ -47,20 +47,42 @@ export const UNIDADE = {
   comprimentoCm: 6,
 };
 
-/** Embalagem de envio por faixa de quantidade (cm). AJUSTE se usar caixas diferentes. */
+/**
+ * Lê um número de variável de ambiente; usa o padrão se ausente/inválido.
+ * (Só roda no servidor — pacoteParaQuantidade é usada apenas nas rotas de API.)
+ */
+function envNum(chave: string, padrao: number): number {
+  const v = Number(process.env[chave]);
+  return Number.isFinite(v) && v > 0 ? v : padrao;
+}
+
+/**
+ * Embalagem de envio por faixa de quantidade (cm/kg).
+ * Tudo é configurável pelo .env — se a variável não existir, usa o padrão abaixo.
+ *
+ *   PACOTE_PESO_UNITARIO   peso de 1 pote cheio (kg)        [padrão 0.18]
+ *   PACOTE_PESO_EMBALAGEM  peso extra da caixa/plástico (kg)[padrão 0.05]
+ *   PACOTE_{1,2,3}_ALTURA / _LARGURA / _COMPRIMENTO   dimensões da caixa (cm)
+ *     faixa 1 = até 1 pote · faixa 2 = até 2 · faixa 3 = 3 ou mais
+ */
 export function pacoteParaQuantidade(unidades: number) {
-  // Caixa que comporta a quantidade de potes do pedido
-  const base =
+  const pesoUnit = envNum("PACOTE_PESO_UNITARIO", UNIDADE.pesoKg);
+  const pesoEmbalagem = envNum("PACOTE_PESO_EMBALAGEM", 0.05);
+
+  // Faixa e dimensões-padrão correspondentes
+  const faixa = unidades <= 1 ? "1" : unidades <= 2 ? "2" : "3";
+  const padrao =
     unidades <= 1
       ? { altura: 12, largura: 9, comprimento: 8 }
       : unidades <= 2
         ? { altura: 12, largura: 13, comprimento: 9 }
         : { altura: 14, largura: 16, comprimento: 12 };
+
   return {
-    height: base.altura,
-    width: base.largura,
-    length: base.comprimento,
-    weight: Number((UNIDADE.pesoKg * unidades + 0.05).toFixed(2)), // +50g embalagem
+    height: envNum(`PACOTE_${faixa}_ALTURA`, padrao.altura),
+    width: envNum(`PACOTE_${faixa}_LARGURA`, padrao.largura),
+    length: envNum(`PACOTE_${faixa}_COMPRIMENTO`, padrao.comprimento),
+    weight: Number((pesoUnit * unidades + pesoEmbalagem).toFixed(2)),
   };
 }
 
