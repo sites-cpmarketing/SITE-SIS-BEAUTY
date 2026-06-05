@@ -15,8 +15,18 @@ const FROM       = process.env.EMAIL_FROM  || "SIS Beauty <onboarding@resend.dev
 const LOJA_EMAIL = process.env.LOJA_EMAIL  || "contato@sisbeauty.com.br";
 const WA_LINK    = "https://wa.me/5562994528264";
 
+/** Valida e-mail básico — rejeita vazios, mascarados (***) e sem @ */
+function emailValido(v?: string): boolean {
+  if (!v) return false;
+  // Resend exige formato real — PIX às vezes retorna "***@***.com" do MP
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) && !v.includes("*");
+}
+
 async function enviar(to: string, subject: string, html: string) {
-  if (!to) return;
+  if (!emailValido(to)) {
+    console.warn(`[email] destinatário inválido ou mascarado ("${to}") — ignorado.`);
+    return;
+  }
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("[email] RESEND_API_KEY não configurado — e-mail ignorado.");
