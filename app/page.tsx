@@ -153,18 +153,58 @@ function Hero() {
           </div>
         </div>
 
-        <div className="relative fade-up">
-          {/* Modelo recortada (sem fundo), alta qualidade — apenas a foto */}
-          <div className="relative mx-auto aspect-[570/904] w-full max-w-[290px] sm:max-w-[330px] md:max-w-[400px]">
-            <Image
-              src={IMG.heroCabelo}
-              alt="Mulher com cabelos longos e saudáveis segurando o produto SIS Beauty"
-              fill
-              priority
-              quality={95}
-              sizes="(max-width: 768px) 80vw, 40vw"
-              className="object-contain"
-            />
+        {/* ── Moldura premium do hero ── */}
+        <div className="relative fade-up flex justify-center md:justify-end">
+
+          {/* Blob decorativo de fundo */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-6 rounded-full opacity-40 blur-3xl"
+            style={{ background: "radial-gradient(ellipse, #f2d3c7 0%, #fdeee6 55%, transparent 80%)" }}
+          />
+
+          {/* Moldura externa — borda dupla com canto cortado */}
+          <div className="relative w-full max-w-[300px] sm:max-w-[340px] md:max-w-[400px]">
+
+            {/* Cantos decorativos */}
+            <span aria-hidden className="pointer-events-none absolute -top-2 -left-2 h-8 w-8 rounded-tl-xl border-t-2 border-l-2 border-champagne z-10" />
+            <span aria-hidden className="pointer-events-none absolute -top-2 -right-2 h-8 w-8 rounded-tr-xl border-t-2 border-r-2 border-champagne z-10" />
+            <span aria-hidden className="pointer-events-none absolute -bottom-2 -left-2 h-8 w-8 rounded-bl-xl border-b-2 border-l-2 border-champagne z-10" />
+            <span aria-hidden className="pointer-events-none absolute -bottom-2 -right-2 h-8 w-8 rounded-br-xl border-b-2 border-r-2 border-champagne z-10" />
+
+            {/* Foto dentro da moldura */}
+            <div
+              className="relative overflow-hidden rounded-2xl"
+              style={{
+                aspectRatio: "760/1140",
+                boxShadow: "0 24px 64px -16px rgba(74,51,45,0.35), 0 0 0 1px rgba(193,107,86,0.18)",
+              }}
+            >
+              <Image
+                src={IMG.heroCabelo}
+                alt="SIS Beauty — Hair Growth Caps e Premium"
+                fill
+                priority
+                quality={92}
+                sizes="(max-width: 640px) 85vw, (max-width: 1024px) 40vw, 400px"
+                className="object-cover object-top"
+              />
+              {/* Gradiente sutil na base */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4"
+                style={{ background: "linear-gradient(to top, rgba(43,30,26,0.25), transparent)" }}
+              />
+            </div>
+
+            {/* Badge flutuante */}
+            <div
+              className="absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-5 py-2 text-xs font-bold tracking-widest text-white uppercase shadow-lg"
+              style={{ background: "linear-gradient(135deg,#c16b56,#a44f3c)" }}
+            >
+              ✦ Cabelos dos Sonhos ✦
+            </div>
+
           </div>
         </div>
       </div>
