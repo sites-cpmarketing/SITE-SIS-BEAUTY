@@ -3,6 +3,8 @@ import { Playfair_Display, Montserrat } from "next/font/google";
 import "./globals.css";
 import UiEnhancements from "@/components/UiEnhancements";
 import Analytics from "@/components/Analytics";
+import WhatsAppModal from "@/components/WhatsAppModal";
+import StickyComprar from "@/components/StickyComprar";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -80,6 +82,9 @@ export default function RootLayout({
         {children}
         <UiEnhancements />
         <Analytics />
+        {/* Fora do {children}: evita herdar transforms/stacking contexts da página */}
+        <StickyComprar />
+        <WhatsAppModal />
       </body>
     </html>
   );

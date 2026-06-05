@@ -5,9 +5,7 @@ import CarrosselResultados from "@/components/CarrosselResultados";
 import { IMG } from "@/lib/produtos";
 import { SITE, waLink } from "@/lib/site";
 import JsonLd from "@/components/JsonLd";
-import StickyComprar from "@/components/StickyComprar";
 import Logo from "@/components/Logo";
-import WhatsAppModal from "@/components/WhatsAppModal";
 import {
   IcoBroto,
   IcoEscudo,
@@ -45,8 +43,6 @@ export default async function Home({
         <CTAFinal />
       </main>
       <Footer />
-      <WhatsAppModal />
-      <StickyComprar />
     </>
   );
 }
