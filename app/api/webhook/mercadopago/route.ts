@@ -77,11 +77,13 @@ export async function POST(req: Request) {
     );
     const pay = await pr.json();
 
-    console.log(`[webhook-mp] payment ${paymentId} | status=${pay?.status} | method=${pay?.payment_type_id}`);
+    const status = pay?.status ?? "desconhecido";
+    console.log(`[webhook-mp] payment ${paymentId} | status=${status} | method=${pay?.payment_type_id}`);
 
-    if (pay?.status !== "approved") {
-      // PIX pode chegar como "pending" antes de ser confirmado — ignorar por ora
-      return Response.json({ ok: true, status: pay?.status ?? "desconhecido" });
+    if (status !== "approved") {
+      // pending = aguardando pagamento | refunded = estornado | cancelled = cancelado
+      console.log(`[webhook-mp] ignorando payment ${paymentId} — status: ${status}`);
+      return Response.json({ ok: true, status });
     }
 
     // Pagamento aprovado — resolve os dados do pedido uma única vez
@@ -166,7 +168,7 @@ function assinaturaValida(req: Request, dataId: string): boolean {
   try {
     const valid = hmac.length === parts.v1.length &&
       crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(parts.v1));
-    if (!valid) console.error("[webhook-mp] HMAC inválido | manifest:", manifest);
+    if (!valid) console.warn("[webhook-mp] HMAC divergente (secret Vercel ≠ MP dashboard) | manifest:", manifest);
     return valid;
   } catch {
     return false;
