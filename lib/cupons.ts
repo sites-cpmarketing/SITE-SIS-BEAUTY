@@ -50,10 +50,10 @@ export type Cupom = {
 // ============================================================
 export const CUPONS: Cupom[] = [
   {
-    codigo: "BEMVINDA10",
+    codigo: "TESTE99",
     tipo: "percentual",
-    valor: 10,
-    descricao: "10% de desconto de boas-vindas",
+    valor: 99,
+    descricao: "99% de desconto para testes",
   },
   {
     codigo: "LANÇAMENTO20",
