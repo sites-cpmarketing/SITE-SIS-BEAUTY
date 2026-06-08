@@ -36,7 +36,7 @@ export const IMG = {
   lifestyleCorpo: "/fotos/dsc06158.webp",
   // Prova social — antes e depois de clientes reais (ordem do carrossel)
   resultado1: "/fotos/resultado-1.webp",
-  resultado2: "/fotos/resultado-2.webp",
+  resultado2: "/fotos/resultado-2.jpeg",
   resultado3: "/fotos/resultado-3.webp",
   resultado4: "/fotos/resultado-4.webp",
 } as const;
