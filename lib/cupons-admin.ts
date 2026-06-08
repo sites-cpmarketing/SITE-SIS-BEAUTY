@@ -14,11 +14,11 @@ import { CUPONS, aplicarCupom } from "./cupons";
 const KV_KEY = "cupons:dinamicos";
 
 function getRedis() {
-  const url   = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Vercel conecta o Upstash Redis com as variáveis KV_REST_API_*
+  const url   = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
 
-  // Importação dinâmica para não quebrar o bundle do cliente
   const { Redis } = require("@upstash/redis") as typeof import("@upstash/redis");
   return new Redis({ url, token });
 }

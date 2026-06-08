@@ -130,19 +130,23 @@ export default function AdminCupons() {
           </button>
         </div>
 
-        {/* Aviso KV não configurado */}
-        {dados && !dados.kvOk && (
-          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-            <p className="font-bold mb-1">⚠️ Armazenamento não configurado</p>
-            <p>
-              Para salvar cupons permanentemente, vá em{" "}
-              <strong>Vercel → Storage → Browse → Upstash → Redis</strong>,
-              crie um banco e clique em <strong>Connect to Project</strong>. O
-              Vercel adicionará automaticamente{" "}
-              <code className="bg-amber-100 px-1 rounded">UPSTASH_REDIS_REST_URL</code>{" "}
-              e{" "}
-              <code className="bg-amber-100 px-1 rounded">UPSTASH_REDIS_REST_TOKEN</code>.
-            </p>
+        {/* Badge de status da conexão */}
+        {dados && (
+          <div
+            className={`flex items-center gap-2 self-start rounded-full px-3 py-1.5 text-xs font-semibold ${
+              dados.kvOk
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                dados.kvOk ? "bg-emerald-500" : "bg-amber-400"
+              }`}
+            />
+            {dados.kvOk
+              ? "Redis conectado — cupons salvos permanentemente"
+              : "Redis não conectado — conecte o Upstash no Vercel para salvar cupons"}
           </div>
         )}
 
