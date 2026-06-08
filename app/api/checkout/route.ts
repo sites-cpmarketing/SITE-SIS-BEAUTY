@@ -1,5 +1,6 @@
 import { getOferta } from "@/lib/produtos";
-import { buscarCupom, aplicarCupom } from "@/lib/cupons";
+import { aplicarCupom } from "@/lib/cupons";
+import { buscarCupomServidor } from "@/lib/cupons-admin";
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     if (!oferta) {
       return Response.json({ error: "Oferta inválida." }, { status: 400 });
     }
-    const cupom = buscarCupom(body.cupom);
+    const cupom = await buscarCupomServidor(body.cupom, oferta.precoPor);
     const total = aplicarCupom(oferta.precoPor, cupom);
 
     const ref = `SIS-${ofertaId}-${Date.now()}`;
