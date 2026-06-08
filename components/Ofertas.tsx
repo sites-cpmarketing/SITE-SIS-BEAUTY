@@ -512,7 +512,7 @@ export default function Ofertas() {
                 </div>
 
                 {/* Cupom de desconto — disponível apenas no Combo 5 */}
-                {sel.id !== "completo" && <div className="mb-3">
+                {sel.id === "essencial" && <div className="mb-3">
                   <div className="flex gap-2">
                     <input
                       value={cupomCodigo}
