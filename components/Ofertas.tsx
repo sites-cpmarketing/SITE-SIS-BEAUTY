@@ -11,7 +11,7 @@ import {
   type Oferta,
   type Endereco,
 } from "@/lib/produtos";
-import { buscarCupom, aplicarCupom, validarCupom, mensagemErroCupom, type Cupom } from "@/lib/cupons";
+import { aplicarCupom, type Cupom } from "@/lib/cupons";
 import {
   mascaraCPF,
   mascaraTelefone,
@@ -52,15 +52,26 @@ export default function Ofertas() {
     setCupomErro("");
   }
 
-  function aplicarCupomCodigo() {
-    const resultado = validarCupom(cupomCodigo, sel.precoPor);
-    if (!resultado.valido) {
-      setCupom(null);
-      setCupomErro(mensagemErroCupom(resultado.motivo, resultado.cupom, sel.precoPor));
-      return;
-    }
-    setCupom(resultado.cupom);
+  async function aplicarCupomCodigo() {
+    if (!cupomCodigo.trim()) return;
     setCupomErro("");
+    try {
+      const r = await fetch("/api/cupom", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: cupomCodigo, total: sel.precoPor }),
+      });
+      const d = await r.json();
+      if (!d.valido) {
+        setCupom(null);
+        setCupomErro("Cupom inválido ou inexistente.");
+        return;
+      }
+      setCupom(d.cupom);
+      setCupomErro("");
+    } catch {
+      setCupomErro("Erro ao verificar o cupom. Tente novamente.");
+    }
   }
 
   // Busca o endereço pelo CEP (ViaCEP) e preenche rua/bairro/cidade/UF.
