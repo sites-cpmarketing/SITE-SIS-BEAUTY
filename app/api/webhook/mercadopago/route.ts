@@ -522,11 +522,13 @@ async function gerarEtiqueta(pay: Pay, meta: Meta) {
   const tracking = (orderData?.tracking as string) || (orderData?.tracking_code as string);
 
   if (tracking) {
-    const emailCliente = pay.payer?.email || "";
+    // Usa resolverEmailCliente para priorizar o e-mail digitado no checkout
+    // (pay.payer?.email do PIX vem vazio ou mascarado — meta.end_email é mais confiável)
+    const emailCliente = resolverEmailCliente(pay, meta);
     const nome = s("end_nome") || "cliente";
     const servico = cart.service?.name as string | undefined;
     const descricao = s("descricao") || "pedido SIS Beauty";
-    console.log(`[ME] etiqueta gerada — rastreio: ${tracking}`);
+    console.log(`[ME] etiqueta gerada — rastreio: ${tracking} | email rastreio: ${emailCliente || "(sem email)"}`);
     if (emailCliente) {
       await enviarRastreio({ nome, emailCliente, codigo: tracking, servico, descricao })
         .catch((e) => console.error("[email] erro ao enviar rastreio:", e));
