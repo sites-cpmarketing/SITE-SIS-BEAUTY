@@ -264,25 +264,12 @@ export default function Ofertas() {
                   )}
                 </div>
 
-                {/* Monte como quiser — composições disponíveis */}
-                {o.montavel && o.composicoes && (
-                  <div className="mb-4 rounded-xl border-2 border-rose bg-rose-light/30 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-rose mb-2">
-                      🎨 Monte como quiser
+                {/* Monte como quiser */}
+                {o.montavel && (
+                  <div className="mb-4 rounded-xl border-2 border-rose bg-rose-light/30 px-3 py-2.5">
+                    <p className="text-xs font-bold uppercase tracking-wide text-rose">
+                      🎨 Monte como quiser — goma, cápsula ou os dois
                     </p>
-                    <p className="text-xs text-cacau mb-2">
-                      Escolha entre <strong>goma</strong>, <strong>cápsula</strong> ou <strong>misture os dois</strong>:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {o.composicoes.map((c, i) => (
-                        <span
-                          key={i}
-                          className="rounded-full bg-white border border-rose-light px-2.5 py-1 text-xs font-medium text-cacau"
-                        >
-                          {c}
-                        </span>
-                      ))}
-                    </div>
                   </div>
                 )}
 
@@ -524,8 +511,8 @@ export default function Ofertas() {
                   </div>
                 </div>
 
-                {/* Cupom de desconto */}
-                <div className="mb-3">
+                {/* Cupom de desconto — disponível apenas no Combo 5 */}
+                {sel.id === "completo" && <div className="mb-3">
                   <div className="flex gap-2">
                     <input
                       value={cupomCodigo}
@@ -552,7 +539,7 @@ export default function Ofertas() {
                       ✓ {cupom.descricao} aplicado
                     </p>
                   )}
-                </div>
+                </div>}
 
                 <div className="space-y-2 text-sm border-t border-rose-light pt-4">
                   <Row label="Produto" value={brl(sel.precoPor)} />
