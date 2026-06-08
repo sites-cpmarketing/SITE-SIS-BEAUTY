@@ -201,11 +201,10 @@ export default function AdminCupons() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Campo
+              <CampoData
                 label="Expira em (opcional)"
                 value={form.expira}
                 onChange={(v) => setF("expira", v)}
-                placeholder="AAAA-MM-DD"
               />
               <Campo
                 label="Pedido mínimo R$ (opcional)"
@@ -406,6 +405,32 @@ function Campo({
         inputMode={inputMode}
         required={required}
         className="w-full rounded-xl border-2 border-rose-light bg-white px-4 py-3 text-sm outline-none focus:border-rose"
+      />
+    </label>
+  );
+}
+
+function CampoData({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs font-semibold text-cacau-soft block mb-1">
+        {label}
+      </span>
+      <input
+        type="date"
+        lang="pt-BR"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        min={new Date().toISOString().slice(0, 10)}
+        className="w-full rounded-xl border-2 border-rose-light bg-white px-4 py-3 text-sm outline-none focus:border-rose [color-scheme:light]"
       />
     </label>
   );
