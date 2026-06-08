@@ -13,28 +13,25 @@ import { CUPONS, aplicarCupom } from "./cupons";
 
 const KV_KEY = "cupons:dinamicos";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getKv(): Promise<any | null> {
-  try {
-    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-      return null;
-    }
-    const mod = await import("@vercel/kv");
-    return mod.kv;
-  } catch {
-    return null;
-  }
+function getRedis() {
+  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+
+  // Importação dinâmica para não quebrar o bundle do cliente
+  const { Redis } = require("@upstash/redis") as typeof import("@upstash/redis");
+  return new Redis({ url, token });
 }
 
 export async function kvConfigurado(): Promise<boolean> {
-  return (await getKv()) !== null;
+  return getRedis() !== null;
 }
 
 export async function listarCuponsKV(): Promise<Cupom[]> {
   try {
-    const kv = await getKv();
-    if (!kv) return [];
-    const lista = (await kv.get(KV_KEY)) as Cupom[] | null;
+    const redis = getRedis();
+    if (!redis) return [];
+    const lista = await redis.get<Cupom[]>(KV_KEY);
     return lista ?? [];
   } catch {
     return [];
@@ -42,39 +39,35 @@ export async function listarCuponsKV(): Promise<Cupom[]> {
 }
 
 export async function criarCupomKV(cupom: Cupom): Promise<void> {
-  const kv = await getKv();
-  if (!kv)
+  const redis = getRedis();
+  if (!redis)
     throw new Error(
-      "Vercel KV não configurado. Crie um KV Store no painel do Vercel."
+      "Upstash Redis não configurado. Crie um Redis no Vercel (Upstash) e conecte ao projeto."
     );
   const lista = await listarCuponsKV();
-  if (lista.some((c) => c.codigo === cupom.codigo)) {
+  if (lista.some((c) => c.codigo === cupom.codigo))
     throw new Error(`O código "${cupom.codigo}" já existe nos cupons dinâmicos.`);
-  }
-  await kv.set(KV_KEY, [...lista, cupom]);
+  await redis.set(KV_KEY, [...lista, cupom]);
 }
 
 export async function atualizarCupomKV(
   codigo: string,
   dados: Partial<Cupom>
 ): Promise<void> {
-  const kv = await getKv();
-  if (!kv) throw new Error("Vercel KV não configurado.");
+  const redis = getRedis();
+  if (!redis) throw new Error("Upstash Redis não configurado.");
   const lista = await listarCuponsKV();
   const idx = lista.findIndex((c) => c.codigo === codigo);
   if (idx === -1) throw new Error("Cupom não encontrado.");
   lista[idx] = { ...lista[idx], ...dados };
-  await kv.set(KV_KEY, lista);
+  await redis.set(KV_KEY, lista);
 }
 
 export async function deletarCupomKV(codigo: string): Promise<void> {
-  const kv = await getKv();
-  if (!kv) throw new Error("Vercel KV não configurado.");
+  const redis = getRedis();
+  if (!redis) throw new Error("Upstash Redis não configurado.");
   const lista = await listarCuponsKV();
-  await kv.set(
-    KV_KEY,
-    lista.filter((c) => c.codigo !== codigo)
-  );
+  await redis.set(KV_KEY, lista.filter((c) => c.codigo !== codigo));
 }
 
 /**

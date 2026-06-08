@@ -135,11 +135,13 @@ export default function AdminCupons() {
           <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
             <p className="font-bold mb-1">⚠️ Armazenamento não configurado</p>
             <p>
-              Para salvar cupons permanentemente, crie um{" "}
-              <strong>KV Store</strong> no painel do Vercel (Storage → Create →
-              KV) e adicione a variável <code className="bg-amber-100 px-1 rounded">KV_REST_API_URL</code> e{" "}
-              <code className="bg-amber-100 px-1 rounded">KV_REST_API_TOKEN</code>. O
-              Vercel adiciona essas variáveis automaticamente ao conectar o KV.
+              Para salvar cupons permanentemente, vá em{" "}
+              <strong>Vercel → Storage → Browse → Upstash → Redis</strong>,
+              crie um banco e clique em <strong>Connect to Project</strong>. O
+              Vercel adicionará automaticamente{" "}
+              <code className="bg-amber-100 px-1 rounded">UPSTASH_REDIS_REST_URL</code>{" "}
+              e{" "}
+              <code className="bg-amber-100 px-1 rounded">UPSTASH_REDIS_REST_TOKEN</code>.
             </p>
           </div>
         )}
