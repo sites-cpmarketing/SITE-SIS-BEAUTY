@@ -124,7 +124,7 @@ export const OFERTAS: Oferta[] = [
   {
     id: "duo",
     nome: "Kit 3 Meses",
-    subtitulo: "Mais potes, mais resultado, mesmo investimento",
+    subtitulo: "Mais potes, mais resultado",
     badge: "🎁 PAGUE 2, LEVE 3",
     unidades: 3,
     precoDe: 291,
@@ -141,7 +141,7 @@ export const OFERTAS: Oferta[] = [
   {
     id: "completo",
     nome: "Kit 6 Meses",
-    subtitulo: "O tratamento completo para transformação definitiva",
+    subtitulo: "O tratamento completo para transformação contínua",
     badge: "🔥 COMPRE 5, LEVE 6",
     destaque: true,
     unidades: 6,
