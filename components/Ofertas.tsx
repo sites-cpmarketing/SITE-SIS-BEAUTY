@@ -252,12 +252,39 @@ export default function Ofertas() {
                   <p className="text-xs text-cacau-soft mt-1">
                     ou 12x de {brl(o.precoPor / 12)}
                   </p>
+                  {o.unidades > 1 && (
+                    <p className="text-xs font-bold text-rose mt-1">
+                      = {brl(o.precoPor / o.unidades)} por pote
+                    </p>
+                  )}
                   {o.freteGratis && (
                     <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                       🚚 Frete grátis para todo o Brasil
                     </span>
                   )}
                 </div>
+
+                {/* Monte como quiser — composições disponíveis */}
+                {o.montavel && o.composicoes && (
+                  <div className="mb-4 rounded-xl border-2 border-rose bg-rose-light/30 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-rose mb-2">
+                      🎨 Monte como quiser
+                    </p>
+                    <p className="text-xs text-cacau mb-2">
+                      Escolha entre <strong>goma</strong>, <strong>cápsula</strong> ou <strong>misture os dois</strong>:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {o.composicoes.map((c, i) => (
+                        <span
+                          key={i}
+                          className="rounded-full bg-white border border-rose-light px-2.5 py-1 text-xs font-medium text-cacau"
+                        >
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <ul className="space-y-2 mb-6 flex-1">
                   {o.beneficios.map((b, i) => (
