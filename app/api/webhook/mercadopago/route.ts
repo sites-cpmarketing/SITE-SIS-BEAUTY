@@ -19,6 +19,28 @@ const ME_BASE = process.env.MELHOR_ENVIO_URL || "https://www.melhorenvio.com.br"
 const ME_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
 const UA = process.env.MELHOR_ENVIO_UA || "SIS Beauty (contato@sisbeauty.com.br)";
 
+// ─── Idempotência: evita etiquetas duplicadas ───────────────────────────────
+// O MP reenvia o webhook múltiplas vezes para o mesmo pagamento.
+// O Map em memória cobre a mesma instância Lambda quente (maioria dos casos).
+// O campo "sis-ref" no produto ME cobre instâncias diferentes.
+const DEDUP_TTL_MS = 4 * 60 * 60 * 1000; // 4 horas
+const _processados = new Map<string, number>(); // paymentId → timestamp
+
+function _jaProcessado(id: string): boolean {
+  const ts = _processados.get(id);
+  if (!ts) return false;
+  if (Date.now() - ts > DEDUP_TTL_MS) { _processados.delete(id); return false; }
+  return true;
+}
+function _marcarProcessado(id: string) {
+  // limpa entradas expiradas ocasionalmente (evita crescimento infinito)
+  if (_processados.size > 200) {
+    const cutoff = Date.now() - DEDUP_TTL_MS;
+    for (const [k, v] of _processados) { if (v < cutoff) _processados.delete(k); }
+  }
+  _processados.set(id, Date.now());
+}
+
 // Dados do REMETENTE (sua loja) — preencha no .env
 const REMETENTE = {
   name: process.env.LOJA_NOME || "SIS Beauty",
@@ -85,6 +107,14 @@ export async function POST(req: Request) {
       console.log(`[webhook-mp] ignorando payment ${paymentId} — status: ${status}`);
       return Response.json({ ok: true, status });
     }
+
+    // ── Idempotência: evita processar o mesmo pagamento duas vezes ──────────
+    if (_jaProcessado(paymentId!)) {
+      console.log(`[webhook-mp] payment ${paymentId} já processado (dedup) — ignorando.`);
+      return Response.json({ ok: true, dedup: true });
+    }
+    // Marca ANTES das operações assíncronas para bloquear chamadas concorrentes
+    _marcarProcessado(paymentId!);
 
     // Pagamento aprovado — resolve os dados do pedido uma única vez
     const meta = await resolverMetadata(pay as Pay);
@@ -365,6 +395,32 @@ async function dispararWebhookPagamento(pay: Pay, meta: Meta) {
   }
 }
 
+/**
+ * Pesquisa se já existe um item no ME associado a este pedido.
+ * Usamos o campo `products[0].name` com o prefixo "REF:" para identificar.
+ * Se encontrar resultado, não precisamos criar outra etiqueta.
+ */
+async function etiquetaJaExiste(
+  headers: Record<string, string>,
+  extRef: string
+): Promise<boolean> {
+  if (!extRef) return false;
+  try {
+    const tag = `REF:${extRef}`;
+    const r = await fetch(
+      `${ME_BASE}/api/v2/me/orders?q=${encodeURIComponent(tag)}&per_page=5`,
+      { headers }
+    );
+    if (!r.ok) return false;
+    const data = await r.json();
+    // A resposta é paginada: { data: [...], meta: {...} }
+    const items: unknown[] = Array.isArray(data) ? data : (data?.data ?? []);
+    return items.length > 0;
+  } catch {
+    return false; // em caso de erro, deixa criar (melhor duplicado que perdido)
+  }
+}
+
 /** Fluxo Melhor Envio: adiciona ao carrinho -> checkout -> gera etiqueta. */
 async function gerarEtiqueta(pay: Pay, meta: Meta) {
   const s = (k: string) => String(meta[k] ?? "");
@@ -379,6 +435,13 @@ async function gerarEtiqueta(pay: Pay, meta: Meta) {
     Accept: "application/json",
     "User-Agent": UA,
   };
+
+  // ── Verificação cross-instância: etiqueta já existe no ME? ───────────────
+  const extRef = pay.external_reference ?? "";
+  if (extRef && await etiquetaJaExiste(headers, extRef)) {
+    console.log(`[ME] etiqueta já existe para referência "${extRef}" — pulando criação duplicada.`);
+    return;
+  }
 
   // Escolhe um serviço que realmente entregue neste CEP/dimensão
   const service = await escolherServico(headers, cep, pkg);
@@ -408,7 +471,9 @@ async function gerarEtiqueta(pay: Pay, meta: Meta) {
     },
     products: [
       {
-        name: `SIS Beauty (${s("descricao") || "Tratamento capilar"})`,
+        // O prefixo "REF:{external_reference}" permite detectar etiquetas duplicadas
+        // pesquisando /api/v2/me/orders?q=REF:{extRef} antes de criar novas.
+        name: `SIS Beauty (${s("descricao") || "Tratamento capilar"}) REF:${extRef || "sem-ref"}`,
         quantity: 1,
         unitary_value: Number(meta.total) || 97,
       },
