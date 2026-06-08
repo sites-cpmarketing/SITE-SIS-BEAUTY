@@ -132,6 +132,7 @@ export const OFERTAS: Oferta[] = [
     montavel: true,
     composicoes: ["3 gomas", "3 cápsulas", "2 gomas + 1 cápsula", "1 goma + 2 cápsulas"],
     beneficios: [
+      "Monte com goma, cápsula ou misture os dois",
       "3 meses de tratamento contínuo",
       "Nutrição profunda e fortalecimento dos fios",
       "Resultados visíveis a partir do 1º mês",
@@ -150,6 +151,7 @@ export const OFERTAS: Oferta[] = [
     montavel: true,
     composicoes: ["6 gomas", "6 cápsulas", "3 gomas + 3 cápsulas", "4 gomas + 2 cápsulas", "2 gomas + 4 cápsulas"],
     beneficios: [
+      "Monte com goma, cápsula ou misture os dois",
       "6 meses de nutrição capilar intensiva",
       "Máxima adesão para transformação duradoura",
       "O kit mais econômico por pote do site",

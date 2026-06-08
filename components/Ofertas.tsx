@@ -275,14 +275,6 @@ export default function Ofertas() {
                   )}
                 </div>
 
-                {/* Monte como quiser */}
-                {o.montavel && (
-                  <div className="mb-4 rounded-xl border-2 border-rose bg-rose-light/30 px-3 py-2.5">
-                    <p className="text-xs font-bold uppercase tracking-wide text-rose">
-                      🎨 Monte como quiser — goma, cápsula ou os dois
-                    </p>
-                  </div>
-                )}
 
                 <ul className="space-y-2 mb-6 flex-1">
                   {o.beneficios.map((b, i) => (
