@@ -18,7 +18,7 @@ const SLIDES: Slide[] = [
   },
   {
     img: IMG.resultado2,
-    texto: "Cerca de 4 cm de crescimento em menos de 2 meses.",
+    texto: "menos de 4 meses de tratamento com a melhor vitamina capilar que você já usou.",
     autor: "Cliente SIS Beauty",
   },
   {
