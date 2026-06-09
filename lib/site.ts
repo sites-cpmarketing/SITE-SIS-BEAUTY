@@ -29,7 +29,7 @@ export const SITE = {
    */
   empresa: {
     razaoSocial: "SIS Beauty",
-    documento: "CNPJ 00.000.000/0001-00", // TODO: substituir pelo CNPJ real
+    documento: "CNPJ 57.868.153/0001-72",
     endereco:
       "Av. A, Qd. 32, Lt. 09 — Vila Lucy, Goiânia/GO, CEP 74320-020",
   },
