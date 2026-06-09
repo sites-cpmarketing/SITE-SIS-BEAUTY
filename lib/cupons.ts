@@ -98,7 +98,7 @@ export const CUPONS: Cupom[] = [
     descricao: "10% off — promoção de lançamento",
   },
     {
-    codigo: "MARILLYA10",
+    codigo: "MARI10",
     tipo: "percentual",
     valor: 10,
     descricao: "10% off — promoção de lançamento",
@@ -171,18 +171,41 @@ export function buscarCupom(
   return r.valido ? r.cupom : null;
 }
 
-/** Aplica o desconto do cupom a um total, sem deixar negativo. */
-export function aplicarCupom(total: number, cupom: Cupom | null): number {
+/**
+ * Fator de desconto do cupom conforme a oferta.
+ * Os kits de 3 meses ("duo") e 6 meses ("completo") recebem METADE do desconto
+ * do cupom; o Tratamento 30 Dias ("essencial") recebe o desconto cheio.
+ * (Ex.: um cupom de 10% vale 5% nesses dois kits.)
+ */
+export function fatorCupomPorOferta(ofertaId: string): number {
+  return ofertaId === "duo" || ofertaId === "completo" ? 0.5 : 1;
+}
+
+/**
+ * Aplica o desconto do cupom a um total, sem deixar negativo.
+ * `fator` multiplica o desconto (1 = cheio · 0.5 = metade) — use
+ * `fatorCupomPorOferta(ofertaId)` para os kits de 3 e 6 meses.
+ */
+export function aplicarCupom(
+  total: number,
+  cupom: Cupom | null,
+  fator = 1
+): number {
   if (!cupom) return total;
-  const desconto =
+  const descontoCheio =
     cupom.tipo === "percentual" ? (total * cupom.valor) / 100 : cupom.valor;
+  const desconto = descontoCheio * fator;
   return Math.max(0, Math.round((total - desconto) * 100) / 100);
 }
 
 /** Calcula o valor do desconto em R$ (útil para exibir na UI). */
-export function valorDesconto(total: number, cupom: Cupom | null): number {
+export function valorDesconto(
+  total: number,
+  cupom: Cupom | null,
+  fator = 1
+): number {
   if (!cupom) return 0;
-  return total - aplicarCupom(total, cupom);
+  return total - aplicarCupom(total, cupom, fator);
 }
 
 /** Mensagem de erro amigável para exibir ao cliente. */

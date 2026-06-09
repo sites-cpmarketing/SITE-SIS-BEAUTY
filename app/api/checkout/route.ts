@@ -1,5 +1,5 @@
 import { getOferta } from "@/lib/produtos";
-import { aplicarCupom } from "@/lib/cupons";
+import { aplicarCupom, fatorCupomPorOferta } from "@/lib/cupons";
 import { buscarCupomServidor } from "@/lib/cupons-admin";
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
@@ -36,7 +36,12 @@ export async function POST(req: Request) {
       return Response.json({ error: "Oferta inválida." }, { status: 400 });
     }
     const cupom = await buscarCupomServidor(body.cupom, oferta.precoPor);
-    const total = aplicarCupom(oferta.precoPor, cupom);
+    // Kits de 3 e 6 meses recebem metade do desconto do cupom.
+    const total = aplicarCupom(
+      oferta.precoPor,
+      cupom,
+      fatorCupomPorOferta(oferta.id)
+    );
 
     const ref = `SIS-${ofertaId}-${Date.now()}`;
 

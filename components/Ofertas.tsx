@@ -11,7 +11,7 @@ import {
   type Oferta,
   type Endereco,
 } from "@/lib/produtos";
-import { aplicarCupom, type Cupom } from "@/lib/cupons";
+import { aplicarCupom, fatorCupomPorOferta, type Cupom } from "@/lib/cupons";
 import {
   mascaraCPF,
   mascaraTelefone,
@@ -125,8 +125,10 @@ export default function Ofertas() {
   const imgResumo =
     qtdCapsula > 0 && qtdGoma === 0 ? IMG.mockupCapsula : IMG.mockupGoma;
 
+  // Kits de 3 e 6 meses recebem metade do desconto do cupom.
+  const fatorCupom = fatorCupomPorOferta(sel.id);
   // Frete grátis: total = valor do produto com o desconto do cupom (se houver).
-  const total = aplicarCupom(sel.precoPor, cupom);
+  const total = aplicarCupom(sel.precoPor, cupom, fatorCupom);
   const cpfInvalido = end.cpf.length > 0 && !cpfValido(end.cpf);
   const enderecoOk = enderecoValido(end);
   const podeFinalizar = escolhaFeita && enderecoOk && !checkoutLoad;
@@ -514,8 +516,9 @@ export default function Ofertas() {
                   </div>
                 </div>
 
-                {/* Cupom de desconto — disponível apenas no Combo 5 */}
-                {sel.id === "essencial" && <div className="mb-3">
+                {/* Cupom de desconto — vale para todas as ofertas.
+                    Nos kits de 3 e 6 meses o desconto vale metade. */}
+                <div className="mb-3">
                   <div className="flex gap-2">
                     <input
                       value={cupomCodigo}
@@ -539,10 +542,18 @@ export default function Ofertas() {
                   )}
                   {cupom && (
                     <p className="mt-1 text-xs font-semibold text-emerald-600">
-                      ✓ {cupom.descricao} aplicado
+                      ✓ Cupom {cupom.codigo} aplicado
+                      {fatorCupom < 1 && cupom.tipo === "percentual"
+                        ? ` — ${(cupom.valor * fatorCupom).toLocaleString("pt-BR")}% neste kit`
+                        : ""}
                     </p>
                   )}
-                </div>}
+                  {!cupom && fatorCupom < 1 && (
+                    <p className="mt-1 text-xs text-cacau-soft">
+                      Cupons valem metade do desconto nos kits de 3 e 6 meses.
+                    </p>
+                  )}
+                </div>
 
                 <div className="space-y-2 text-sm border-t border-rose-light pt-4">
                   <Row label="Produto" value={brl(sel.precoPor)} />
