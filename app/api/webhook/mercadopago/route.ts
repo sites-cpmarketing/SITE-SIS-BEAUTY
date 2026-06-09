@@ -13,6 +13,7 @@ import crypto from "crypto";
 import { pacoteParaQuantidade } from "@/lib/produtos";
 import { enviarEmailsPedido, enviarRastreio, type DadosPedido } from "@/lib/email";
 import { normalizarTelefone } from "@/lib/validacao";
+import { reservarProcessamento } from "@/lib/idempotencia";
 
 const MP_TOKEN = process.env.MP_ACCESS_TOKEN;
 const ME_BASE = process.env.MELHOR_ENVIO_URL || "https://www.melhorenvio.com.br";
@@ -21,8 +22,9 @@ const UA = process.env.MELHOR_ENVIO_UA || "SIS Beauty (contato@sisbeauty.com.br)
 
 // ─── Idempotência: evita etiquetas duplicadas ───────────────────────────────
 // O MP reenvia o webhook múltiplas vezes para o mesmo pagamento.
-// O Map em memória cobre a mesma instância Lambda quente (maioria dos casos).
-// O campo "sis-ref" no produto ME cobre instâncias diferentes.
+// Camada 1 (este Map): cobre a mesma instância Lambda quente — atalho rápido.
+// Camada 2 (Redis SET NX em lib/idempotencia): trava atômica cross-instância,
+//   é o que realmente garante etiqueta única quando as chamadas são simultâneas.
 const DEDUP_TTL_MS = 4 * 60 * 60 * 1000; // 4 horas
 const _processados = new Map<string, number>(); // paymentId → timestamp
 
@@ -109,11 +111,19 @@ export async function POST(req: Request) {
     }
 
     // ── Idempotência: evita processar o mesmo pagamento duas vezes ──────────
-    if (_jaProcessado(paymentId!)) {
+    // O MP reenvia o webhook para o mesmo pagamento (notification_url da
+    // preferência + webhook do painel), e as chamadas costumam cair em
+    // instâncias serverless diferentes — quase simultâneas.
+    //
+    //  1) Map em memória: atalho rápido para a MESMA instância quente.
+    //  2) reservarProcessamento (Redis SET NX): trava ATÔMICA e cross-instância
+    //     — só a primeira chamada reserva o pagamento; as demais param aqui.
+    //     É o que de fato impede as etiquetas duplicadas.
+    if (_jaProcessado(paymentId!) || !(await reservarProcessamento(paymentId!))) {
       console.log(`[webhook-mp] payment ${paymentId} já processado (dedup) — ignorando.`);
       return Response.json({ ok: true, dedup: true });
     }
-    // Marca ANTES das operações assíncronas para bloquear chamadas concorrentes
+    // Marca em memória para bloquear chamadas concorrentes na mesma instância
     _marcarProcessado(paymentId!);
 
     // Pagamento aprovado — resolve os dados do pedido uma única vez
